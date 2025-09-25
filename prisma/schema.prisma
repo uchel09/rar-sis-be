@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  SCHOOL_ADMIN
+  STUDENT
+  TEACHER
+  PARENT
+  STAFF
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  SICK
+  PERMISSION
+}
+
+enum Semester {
+  SEMESTER_1
+  SEMESTER_2
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  fullName  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student?
+  teacher Teacher?
+  parent  Parent?
+  Staff   Staff[]
+
+  SchoolAdmin SchoolAdmin[]
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schools School[]
+}
+
+model School {
+  id             String   @id @default(uuid())
+  organizationId String
+  code           String   @unique
+  name           String
+  address        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  admins     SchoolAdmin[]
+  classes    Class[]
+  students   Student[]
+  teachers   Teacher[]
+  subjects   Subject[]
+  Staff      Staff[]
+  Attendance Attendance[]
+}
+
+model SchoolAdmin {
+  id        String   @id @default(uuid())
+  userId    String
+  schoolId  String
+  dob       DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@unique([userId, schoolId])
+}
+
+model Student {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  schoolId         String
+  classId          String?
+  enrollmentNumber String   @unique
+  dob              DateTime
+  address          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
+  class  Class? @relation(fields: [classId], references: [id])
+
+  parents             StudentParent[]
+  StudentClassHistory StudentClassHistory[]
+  attendances         Attendance[]
+}
+
+model Parent {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  phone     String
+  address   String?
+  dob       DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id])
+  students StudentParent[]
+}
+
+model StudentParent {
+  id        String @id @default(uuid())
+  studentId String
+  parentId  String
+
+  student Student @relation(fields: [studentId], references: [id])
+  parent  Parent  @relation(fields: [parentId], references: [id])
+
+  @@unique([studentId, parentId])
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  schoolId  String
+  nik       String   @unique
+  nip       String?  @unique
+  hireDate  DateTime
+  dob       DateTime
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  school      School       @relation(fields: [schoolId], references: [id])
+  classes     Class[]      @relation("ClassTeacher")
+  subjects    Subject[]
+  attendances Attendance[]
+
+  homerooms Class[] @relation("HomeroomClass")
+}
+
+model Staff {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  schoolId  String
+  position  String
+  phone     String
+  nik       String   @unique
+  nip       String?
+  dob       DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
+}
+
+model Class {
+  id                String   @id @default(uuid())
+  schoolId          String
+  teacherId         String?
+  homeroomTeacherId String?
+  name              String
+  year              Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  school              School                @relation(fields: [schoolId], references: [id])
+  teacher             Teacher?              @relation("ClassTeacher", fields: [teacherId], references: [id])
+  homeroomTeacher     Teacher?              @relation("HomeroomClass", fields: [homeroomTeacherId], references: [id])
+  students            Student[]
+  subjects            Subject[]
+  StudentClassHistory StudentClassHistory[]
+}
+
+model StudentClassHistory {
+  id        String   @id @default(uuid())
+  studentId String
+  classId   String
+  year      Int
+  semester  Semester
+
+  student Student @relation(fields: [studentId], references: [id])
+  class   Class   @relation(fields: [classId], references: [id])
+}
+
+model Subject {
+  id        String @id @default(uuid())
+  name      String
+  schoolId  String
+  classId   String
+  teacherId String
+
+  school      School       @relation(fields: [schoolId], references: [id])
+  class       Class        @relation(fields: [classId], references: [id])
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  attendances Attendance[]
+}
+
+model Attendance {
+  id        String           @id @default(uuid())
+  studentId String
+  subjectId String
+  teacherId String?
+  schoolId  String // Tambahan ini
+  date      DateTime
+  semester  Semester
+  status    AttendanceStatus
+  note      String?
+
+  student Student  @relation(fields: [studentId], references: [id])
+  subject Subject  @relation(fields: [subjectId], references: [id])
+  teacher Teacher? @relation(fields: [teacherId], references: [id])
+  school  School   @relation(fields: [schoolId], references: [id]) // Relasi ke school
+
+  @@unique([studentId, subjectId, date])
+}

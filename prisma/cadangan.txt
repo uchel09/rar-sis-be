@@ -1,0 +1,287 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  STUDENT
+  TEACHER
+  PARENT
+  STAFF
+}
+
+// ========================
+// Core Authentication
+// ========================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student?
+  teacher Teacher?
+  parent  Parent?
+  // staff   Staff?
+}
+
+// ========================
+// Students & Parents
+// ========================
+model Student {
+  id               String           @id @default(uuid())
+  userId           String           @unique
+  enrollmentNumber String           @unique
+  dob              DateTime?
+  address          String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id])
+  classId    String?
+  class      Class?          @relation(fields: [classId], references: [id])
+  // attendance Attendance[]
+  // marks      Mark[]
+  // submissions Submission[]
+  // loans      Loan[]
+  // transactions Transaction[]
+  // transports StudentTransport[]
+  parents    StudentParent[]
+}
+
+model Parent {
+  id        String           @id @default(uuid())
+  userId    String           @unique
+  phone     String?
+  address   String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id])
+  students StudentParent[]
+}
+
+model StudentParent {
+  id        String   @id @default(uuid())
+  studentId String
+  parentId  String
+
+  student Student @relation(fields: [studentId], references: [id])
+  parent  Parent  @relation(fields: [parentId], references: [id])
+
+  @@unique([studentId, parentId])
+}
+
+// ========================
+// Teachers & Classes
+// ========================
+model Teacher {
+  id         String       @id @default(uuid())
+  userId     String       @unique
+  nik       String   @unique // Nomor Induk Kependudukan/untuk honorer
+  nip       String?  @unique // opsional, jika ASN
+  hireDate   DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user       User         @relation(fields: [userId], references: [id])
+  subjects   Subject[]
+  timetables Timetable[]
+  // exams      Exam[]
+  // assignments Assignment[]
+  classes    Class[]      @relation("ClassTeacher")
+}
+
+model Class {
+  id        String       @id @default(uuid())
+  name      String
+  year      Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  students    Student[]
+  timetables  Timetable[]
+  teacherId   String?
+  teacher     Teacher?     @relation("ClassTeacher", fields: [teacherId], references: [id])
+  // attendances Attendance[] // 👈 tambahkan ini
+}
+
+
+// ========================
+// Subjects, Timetable, Attendance
+// ========================
+model Subject {
+  id        String       @id @default(uuid())
+  name      String
+  code      String       @unique
+  teacherId String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  teacher     Teacher     @relation(fields: [teacherId], references: [id])
+  timetables  Timetable[]
+  // exams       Exam[]
+  // assignments Assignment[]
+}
+
+model Timetable {
+  id        String   @id @default(uuid())
+  classId   String
+  subjectId String
+  teacherId String
+  dayOfWeek String
+  startTime DateTime
+  endTime   DateTime
+
+  class   Class   @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+}
+
+// model Attendance {
+//   id        String   @id @default(uuid())
+//   studentId String
+//   classId   String
+//   date      DateTime
+//   status    String
+
+//   student Student @relation(fields: [studentId], references: [id])
+//   class   Class   @relation(fields: [classId], references: [id])
+// }
+
+// // ========================
+// // Exams, Marks, Assignments
+// // ========================
+// model Exam {
+//   id        String   @id @default(uuid())
+//   subjectId String
+//   teacherId String
+//   title     String
+//   date      DateTime
+
+//   subject Subject @relation(fields: [subjectId], references: [id])
+//   teacher Teacher @relation(fields: [teacherId], references: [id])
+//   marks   Mark[]
+// }
+
+// model Mark {
+//   id        String   @id @default(uuid())
+//   studentId String
+//   examId    String
+//   score     Float
+
+//   student Student @relation(fields: [studentId], references: [id])
+//   exam    Exam    @relation(fields: [examId], references: [id])
+// }
+
+// model Assignment {
+//   id        String   @id @default(uuid())
+//   subjectId String
+//   teacherId String
+//   title     String
+//   dueDate   DateTime
+
+//   subject     Subject     @relation(fields: [subjectId], references: [id])
+//   teacher     Teacher     @relation(fields: [teacherId], references: [id])
+//   submissions Submission[]
+// }
+
+// model Submission {
+//   id           String   @id @default(uuid())
+//   studentId    String
+//   assignmentId String
+//   content      String
+//   submittedAt  DateTime @default(now())
+
+//   student    Student    @relation(fields: [studentId], references: [id])
+//   assignment Assignment @relation(fields: [assignmentId], references: [id])
+// }
+
+// // ========================
+// // Library
+// // ========================
+// model LibraryBook {
+//   id            String   @id @default(uuid())
+//   title         String
+//   author        String
+//   isbn          String   @unique
+//   publishedYear Int?
+//   available     Boolean  @default(true)
+
+//   loans Loan[]
+// }
+
+// model Loan {
+//   id        String   @id @default(uuid())
+//   studentId String
+//   bookId    String
+//   loanDate  DateTime @default(now())
+//   returnDate DateTime?
+
+//   student Student     @relation(fields: [studentId], references: [id])
+//   book    LibraryBook @relation(fields: [bookId], references: [id])
+// }
+
+// // ========================
+// // Finance
+// // ========================
+// model Transaction {
+//   id        String   @id @default(uuid())
+//   studentId String
+//   amount    Float
+//   type      String
+//   date      DateTime @default(now())
+
+//   student Student @relation(fields: [studentId], references: [id])
+// }
+
+// // ========================
+// // Transport
+// // ========================
+// model TransportRoute {
+//   id        String   @id @default(uuid())
+//   name      String
+//   busNumber String
+//   driver    String
+//   students  StudentTransport[]
+// }
+
+// model StudentTransport {
+//   id        String @id @default(uuid())
+//   studentId String
+//   routeId   String
+
+//   student Student        @relation(fields: [studentId], references: [id])
+//   route   TransportRoute @relation(fields: [routeId], references: [id])
+
+//   @@unique([studentId, routeId])
+// }
+
+// // ========================
+// // Staff
+// // ========================
+// model Staff {
+//   id        String   @id @default(uuid())
+//   userId    String   @unique
+//   position  String
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   user User @relation(fields: [userId], references: [id])
+// }
