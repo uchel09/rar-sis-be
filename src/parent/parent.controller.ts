@@ -23,19 +23,19 @@ export class ParentController {
   // ✅ CREATE
   @Post()
   async create(@Body() body: CreateParentRequest): Promise<ParentResponse> {
-    return this.parentService.create(body);
+    return await this.parentService.create(body);
   }
 
   // ✅ READ ALL
   @Get()
   async findAll(): Promise<ParentResponse[]> {
-    return this.parentService.findAll();
+    return await this.parentService.findAll();
   }
 
   // ✅ READ BY ID
   @Get(':id')
   async findById(@Param('id') id: string): Promise<ParentResponse> {
-    return this.parentService.findById(id);
+    return await this.parentService.findById(id);
   }
 
   // ✅ UPDATE
@@ -44,13 +44,13 @@ export class ParentController {
     @Param('id') id: string,
     @Body() body: UpdateParentRequest,
   ): Promise<ParentResponse> {
-    return this.parentService.update(id, body);
+    return await this.parentService.update(id, body);
   }
 
   // ✅ DELETE
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
-    return this.parentService.delete(id);
+    return await this.parentService.delete(id);
   }
 }
