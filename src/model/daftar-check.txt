@@ -1,0 +1,16 @@
+daftar crud semua tabel check
+
+user ✅
+organization ✅
+school ✅
+school-admin ✅
+student ✅
+student-draft✅
+parent ✅
+teacher ✅
+staff ✅
+class ✅
+student-class-history
+subject✅
+attendances ✅
+time-tabl+e ✅

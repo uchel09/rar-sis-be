@@ -1,28 +1,37 @@
-export interface CreateStudentRequest {
-  email: string;
-  password: string;
-  fullName: string;
-  schoolId: string;
-  dob: Date;
+import { Semester } from 'generated/prisma';
+
+export interface CreateStudentClassHistoryRequest {
+  studentId: string;
+  classId: string;
+  year: number;
+  semester: Semester;
 }
 
-export interface UpdateStudentRequest {
-  fullName?: string;
-  dob?: Date;
-  email?: string;
-  password?: string;
-  schoolId?: string;
+export interface UpdateStudentClassHistoryRequest {
+  classId?: string;
+  year?: number;
+  semester?: Semester;
 }
 
-export interface StudentResponse {
+export interface StudentClassHistoryResponse {
   id: string;
-  schoolId: string;
-  dob: Date;
-  user: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
+  studentId: string;
+  classId: string;
+  year: number;
+  semester: Semester;
   createdAt: Date;
   updatedAt: Date;
+
+  student?: {
+    id: string;
+    user: {
+      id: string;
+      fullName: string;
+      email: string;
+    };
+  };
+  class: {
+    id: string;
+    name: string;
+  };
 }

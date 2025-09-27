@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { StaffPosition } from 'generated/prisma';
 
 export class StaffValidation {
   static readonly CREATE = z.object({
@@ -10,9 +11,7 @@ export class StaffValidation {
       .string()
       .min(3, { message: 'Full name must be at least 3 characters' }),
     schoolId: z.string().uuid({ message: 'schoolId must be a valid UUID' }),
-    position: z
-      .string()
-      .min(2, { message: 'Position must be at least 2 characters' }),
+    position: z.enum(Object.values(StaffPosition) as [string, ...string[]]),
     phone: z
       .string()
       .min(8, { message: 'Phone number must be at least 8 digits' }),
@@ -35,7 +34,9 @@ export class StaffValidation {
       .string()
       .uuid({ message: 'schoolId must be a valid UUID' })
       .optional(),
-    position: z.string().min(2).optional(),
+    position: z
+      .enum(Object.values(StaffPosition) as [string, ...string[]])
+      .optional(),
     phone: z.string().min(8).optional(),
     nik: z.string().min(3).optional(),
     nip: z.string().optional(),

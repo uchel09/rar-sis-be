@@ -1,10 +1,10 @@
-// REQUESTS
+import { StaffPosition } from 'generated/prisma';
 export interface CreateStaffRequest {
   email: string; // dari User
   password: string; // dari User
   fullName: string; // dari User
   schoolId: string;
-  position: string;
+  position: StaffPosition
   phone: string;
   nik: string;
   nip?: string;
@@ -16,7 +16,7 @@ export interface UpdateStaffRequest {
   password?: string; // dari User
   fullName?: string; // dari User
   schoolId?: string;
-  position?: string;
+  position?: StaffPosition;
   phone?: string;
   nik?: string;
   nip?: string;
@@ -27,7 +27,7 @@ export interface UpdateStaffRequest {
 export interface StaffResponse {
   id: string;
   schoolId: string;
-  position: string;
+  position: StaffPosition
   phone: string;
   nik: string;
   nip?: string;
