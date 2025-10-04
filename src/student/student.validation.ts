@@ -16,7 +16,7 @@ export class StudentValidation {
       .optional(),
     enrollmentNumber: z
       .string()
-      .min(3, { message: 'Enrollment number must be at least 3 characters' }),
+      .min(3, { message: 'Enrollment number must be at least 3 characters' }).optional(),
     dob: z.coerce.date(),
     address: z.string().optional(),
     parentIds: z.array(z.uuid()).optional(),

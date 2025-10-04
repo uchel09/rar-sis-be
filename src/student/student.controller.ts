@@ -13,6 +13,7 @@ import {
   UpdateStudentRequest,
   StudentResponse,
 } from 'src/model/student.model';
+import { WebResponse } from 'src/model/web.model';
 
 @Controller('/api/students')
 export class StudentController {
@@ -22,20 +23,34 @@ export class StudentController {
   @Post()
   async create(
     @Body() request: CreateStudentRequest,
-  ): Promise<StudentResponse> {
-    return this.studentService.create(request);
+  ): Promise<WebResponse<StudentResponse>> {
+    if (request.classId === '') {
+      request.classId = undefined;
+    }
+    const result = await this.studentService.create(request);
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ ALL
   @Get()
-  async findAll(): Promise<StudentResponse[]> {
-    return this.studentService.findAll();
+  async findAll(): Promise<WebResponse<StudentResponse[]>> {
+    const result = await this.studentService.findAll();
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ BY ID
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<StudentResponse> {
-    return this.studentService.findById(id);
+  async findById(
+    @Param('id') id: string,
+  ): Promise<WebResponse<StudentResponse>> {
+    const result = await this.studentService.findById(id);
+    return {
+      data: result,
+    };
   }
 
   // ✅ UPDATE
@@ -43,8 +58,14 @@ export class StudentController {
   async update(
     @Param('id') id: string,
     @Body() data: UpdateStudentRequest,
-  ): Promise<StudentResponse> {
-    return this.studentService.update(id, data);
+  ): Promise<WebResponse<StudentResponse>> {
+    if (data.classId === '') {
+      data.classId = undefined;
+    }
+    const result = await this.studentService.update(id, data);
+    return {
+      data: result,
+    };
   }
 
   // ✅ DELETE

@@ -7,13 +7,13 @@ import {
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { PrismaService } from 'src/common/prisma.service';
 import { VallidationService } from 'src/common/validation.service';
+import { Logger } from 'winston';
+import { ClassValidation } from './class.validation';
 import {
   CreateClassRequest,
   UpdateClassRequest,
   ClassResponse,
 } from 'src/model/class.model';
-import { Logger } from 'winston';
-import { ClassValidation } from './class.validation';
 
 @Injectable()
 export class ClassService {
@@ -32,34 +32,90 @@ export class ClassService {
       request,
     );
 
+    // cek class exist
     const exist = await this.prismaService.class.count({
       where: {
         schoolId: createRequest.schoolId,
         name: createRequest.name,
-        year: createRequest.year,
+        academicYearId: createRequest.academicYearId,
       },
     });
-    if (exist !== 0) {
+
+    if (exist > 0) {
       throw new HttpException(
-        `Class ${createRequest.name} for year ${createRequest.year} already exists`,
+        `Class ${createRequest.name} for year ${createRequest.academicYearId} already exists`,
         400,
       );
     }
 
+    // create class
     const cls = await this.prismaService.class.create({
-      data: createRequest,
+      data: {
+        schoolId: createRequest.schoolId,
+        homeroomTeacherId: createRequest.homeroomTeacherId,
+        name: createRequest.name,
+        academicYearId: createRequest.academicYearId,
+        grade: createRequest.grade,
+        subjectClassTeacher: createRequest.subjectClassTeacher
+          ? {
+              create: createRequest.subjectClassTeacher.map((st) => ({
+                teacherId: st.teacherId,
+                subjectId: st.subjectId,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        homeroomTeacher: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+        subjectClassTeacher: true,
+      },
     });
 
     return {
       id: cls.id,
       schoolId: cls.schoolId,
-      teacherId: cls.teacherId || undefined,
-      homeroomTeacherId: cls.homeroomTeacherId || undefined,
+      homeroomTeacher: cls.homeroomTeacher
+        ? {
+            id: cls.homeroomTeacher.id,
+            fullname: cls.homeroomTeacher.user.fullName,
+          }
+        : undefined,
       name: cls.name,
-      year: cls.year,
+      academicYear: {
+        id: cls.academicYear.id,
+        name: cls.academicYear.name,
+      },
       grade: cls.grade,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
+      subjectClassTeacher: (
+        cls.subjectClassTeacher as {
+          id: string;
+          teacherId: string;
+          subjectId: string;
+          classId: string;
+        }[]
+      ).map((s) => ({
+        id: s.id,
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+        classId: s.classId,
+      })),
     };
   }
 
@@ -69,18 +125,57 @@ export class ClassService {
 
     const classes = await this.prismaService.class.findMany({
       orderBy: { createdAt: 'desc' },
+      include: {
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        homeroomTeacher: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+        subjectClassTeacher: true,
+      },
     });
 
     return classes.map((cls) => ({
       id: cls.id,
       schoolId: cls.schoolId,
-      teacherId: cls.teacherId || undefined,
-      homeroomTeacherId: cls.homeroomTeacherId || undefined,
       name: cls.name,
-      year: cls.year,
       grade: cls.grade,
+      academicYear: {
+        id: cls.academicYear.id,
+        name: cls.academicYear.name,
+      },
+      homeroomTeacher: cls.homeroomTeacher
+        ? {
+            id: cls.homeroomTeacher.id,
+            fullname: cls.homeroomTeacher.user.fullName,
+          }
+        : undefined,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
+      subjectTeachers: (
+        cls.subjectClassTeacher as {
+          teacherId: string;
+          subjectId: string;
+          classId: string;
+          id: string;
+        }[]
+      ).map((s) => ({
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+        classId: s.classId,
+        id: s.id,
+      })),
     }));
   }
 
@@ -88,19 +183,61 @@ export class ClassService {
   async findById(id: string): Promise<ClassResponse> {
     this.logger.info(`Find class by id: ${id}`);
 
-    const cls = await this.prismaService.class.findUnique({ where: { id } });
+    const cls = await this.prismaService.class.findUnique({
+      where: { id },
+      include: {
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        homeroomTeacher: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+        subjectClassTeacher: true,
+      },
+    });
+
     if (!cls) throw new NotFoundException(`Class with id ${id} not found`);
 
     return {
       id: cls.id,
       schoolId: cls.schoolId,
-      teacherId: cls.teacherId || undefined,
-      homeroomTeacherId: cls.homeroomTeacherId || undefined,
+      homeroomTeacher: cls.homeroomTeacher
+        ? {
+            id: cls.homeroomTeacher.id,
+            fullname: cls.homeroomTeacher.user.fullName,
+          }
+        : undefined,
       name: cls.name,
-      year: cls.year,
+      academicYear: {
+        id: cls.academicYear.id,
+        name: cls.academicYear.name,
+      },
       grade: cls.grade,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
+      subjectClassTeacher: (
+        cls.subjectClassTeacher as {
+          teacherId: string;
+          subjectId: string;
+          id: string;
+          classId: string;
+        }[]
+      ).map((s) => ({
+        id: s.id,
+        classId: s.classId,
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+      })),
     };
   }
 
@@ -108,7 +245,11 @@ export class ClassService {
   async update(id: string, data: UpdateClassRequest): Promise<ClassResponse> {
     this.logger.info(`Update class ${id} with ${JSON.stringify(data)}`);
 
-    const exist = await this.prismaService.class.findUnique({ where: { id } });
+    const exist = await this.prismaService.class.findUnique({
+      where: { id },
+      include: { subjectClassTeacher: true },
+    });
+
     if (!exist) throw new NotFoundException(`Class with id ${id} not found`);
 
     const updateRequest: UpdateClassRequest = this.validationService.validate(
@@ -118,19 +259,73 @@ export class ClassService {
 
     const cls = await this.prismaService.class.update({
       where: { id },
-      data: updateRequest,
+      data: {
+        schoolId: updateRequest.schoolId,
+        homeroomTeacherId: updateRequest.homeroomTeacherId,
+        name: updateRequest.name,
+        academicYearId: updateRequest.academicYearId,
+        grade: updateRequest.grade,
+        subjectClassTeacher: updateRequest.subjectTeachers
+          ? {
+              deleteMany: {}, // hapus relasi lama
+              create: updateRequest.subjectTeachers.map((st) => ({
+                teacherId: st.teacherId,
+                subjectId: st.subjectId,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        homeroomTeacher: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+        subjectClassTeacher: true,
+      },
     });
 
     return {
       id: cls.id,
       schoolId: cls.schoolId,
-      teacherId: cls.teacherId || undefined,
-      homeroomTeacherId: cls.homeroomTeacherId || undefined,
+      homeroomTeacher: cls.homeroomTeacher
+        ? {
+            id: cls.homeroomTeacher.id,
+            fullname: cls.homeroomTeacher.user.fullName,
+          }
+        : undefined,
       name: cls.name,
-      year: cls.year,
+      academicYear: {
+        id: cls.academicYear.id,
+        name: cls.academicYear.name,
+      },
       grade: cls.grade,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
+      subjectClassTeacher: (
+        cls.subjectClassTeacher as {
+          teacherId: string;
+          subjectId: string;
+          id: string;
+          classId: string;
+        }[]
+      ).map((s) => ({
+        id: s.id,
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+        classId: s.classId,
+      })),
     };
   }
 

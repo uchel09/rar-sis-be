@@ -15,6 +15,7 @@ import {
   UpdateTeacherRequest,
   TeacherResponse,
 } from 'src/model/teacher.model';
+import { WebResponse } from 'src/model/web.model';
 
 @Controller('/api/teachers')
 export class TeacherController {
@@ -24,20 +25,31 @@ export class TeacherController {
   @Post()
   async create(
     @Body() request: CreateTeacherRequest,
-  ): Promise<TeacherResponse> {
-    return await this.teacherService.create(request);
+  ): Promise<WebResponse<TeacherResponse>> {
+    const result = await this.teacherService.create(request);
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ ALL
   @Get()
-  async findAll(): Promise<TeacherResponse[]> {
-    return await this.teacherService.findAll();
+  async findAll(): Promise<WebResponse<TeacherResponse[]>> {
+    const result = await this.teacherService.findAll();
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ BY ID
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<TeacherResponse> {
-    return await this.teacherService.findById(id);
+  async findById(
+    @Param('id') id: string,
+  ): Promise<WebResponse<TeacherResponse>> {
+    const result = await this.teacherService.findById(id);
+     return {
+       data: result,
+     };
   }
 
   // ✅ UPDATE
@@ -45,14 +57,17 @@ export class TeacherController {
   async update(
     @Param('id') id: string,
     @Body() data: UpdateTeacherRequest,
-  ): Promise<TeacherResponse> {
-    return await this.teacherService.update(id, data);
+  ): Promise<WebResponse<TeacherResponse>> {
+    const result = await this.teacherService.update(id, data);
+     return {
+       data: result,
+     };
   }
 
   // ✅ DELETE
   @HttpCode(HttpStatus.OK) // = 200
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<{ message: string }> {
-    return  await this.teacherService.delete(id);
+    return await this.teacherService.delete(id);
   }
 }

@@ -13,29 +13,56 @@ import {
   UpdateStudentDraftRequest,
   StudentDraftResponse,
 } from 'src/model/student-draft.model';
+import { WebResponse } from 'src/model/web.model';
+import { UtilService } from 'src/common/util.service';
 
 @Controller('/api/student-drafts')
 export class StudentDraftController {
-  constructor(private readonly studentDraftService: StudentDraftService) {}
+  constructor(
+    private readonly studentDraftService: StudentDraftService,
+  ) {}
 
   // ✅ CREATE
   @Post()
   async create(
     @Body() request: CreateStudentDraftRequest,
-  ): Promise<StudentDraftResponse> {
-    return this.studentDraftService.create(request);
+  ): Promise<WebResponse<StudentDraftResponse>> {
+    const normalizedRequest = UtilService.normalizeOptionalEmptyStrings(
+      request,
+      [
+        'targetClassId',
+        'enrollmentNumber',
+        'address',
+        'createdBy',
+        'verifiedBy',
+        'rejectionReason',
+        'verifiedAt',
+      ],
+    );
+    const result = await this.studentDraftService.create(normalizedRequest);
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ ALL
   @Get()
-  async findAll(): Promise<StudentDraftResponse[]> {
-    return this.studentDraftService.findAll();
+  async findAll(): Promise<WebResponse<StudentDraftResponse[]>> {
+    const result = await this.studentDraftService.findAll();
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ BY ID
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<StudentDraftResponse> {
-    return this.studentDraftService.findById(id);
+  async findById(
+    @Param('id') id: string,
+  ): Promise<WebResponse<StudentDraftResponse>> {
+    const result = await this.studentDraftService.findById(id);
+    return {
+      data: result,
+    };
   }
 
   // ✅ UPDATE
@@ -43,13 +70,39 @@ export class StudentDraftController {
   async update(
     @Param('id') id: string,
     @Body() request: UpdateStudentDraftRequest,
-  ): Promise<StudentDraftResponse> {
-    return this.studentDraftService.update(id, request);
+  ): Promise<WebResponse<StudentDraftResponse>> {
+    const result = await this.studentDraftService.update(id, request);
+    return {
+      data: result,
+    };
   }
 
   // ✅ DELETE
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     return this.studentDraftService.delete(id);
+  }
+
+  // ✅ APPROVE
+  @Put(':id/approve')
+  async approve(
+    @Param('id') id: string,
+  ): Promise<WebResponse<StudentDraftResponse>> {
+    const result = await this.studentDraftService.approve(id);
+    return {
+      data: result,
+    };
+  }
+
+  // ✅ REJECT
+  @Put(':id/reject')
+  async reject(
+    @Param('id') id: string,
+    @Body('rejectionReason') rejectionReason: string,
+  ): Promise<WebResponse<StudentDraftResponse>> {
+    const result = await this.studentDraftService.reject(id, rejectionReason);
+    return {
+      data: result,
+    };
   }
 }

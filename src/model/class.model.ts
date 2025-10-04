@@ -3,32 +3,44 @@ import { Grade } from 'generated/prisma';
 // Request untuk CREATE Class
 export interface CreateClassRequest {
   schoolId: string;
-  teacherId?: string; // Guru pengajar utama
-  homeroomTeacherId?: string; // Wali kelas
+  homeroomTeacherId?: string; // opsional
   name: string;
-  year: number;
+  academicYearId: string;
   grade: Grade;
+  subjectClassTeacher?: { teacherId: string; subjectId: string }[]; // relasi wajib untuk create
 }
 
 // Request untuk UPDATE Class
 export interface UpdateClassRequest {
   schoolId?: string;
-  teacherId?: string;
   homeroomTeacherId?: string;
   name?: string;
-  year?: number;
+  academicYearId?: string;
   grade?: Grade;
+  subjectTeachers?: { teacherId: string; subjectId: string }[]; // update relasi guru mata pelajaran
 }
 
-// Response model Class
 export interface ClassResponse {
   id: string;
   schoolId: string;
-  teacherId?: string;
-  homeroomTeacherId?: string;
+  homeroomTeacher?: {
+    id: string;
+    fullname: string;
+  };
   name: string;
-  year: number;
+  academicYear: {
+    id: string;
+    name: string;
+  };
   grade: Grade;
-  createdAt: Date; 
-  updatedAt: Date; 
+  createdAt: Date;
+  updatedAt: Date;
+  subjectClassTeacher?: SubjectClassTeacherResponse[];
+}
+
+export interface SubjectClassTeacherResponse {
+  id: string;
+  subjectId: string;
+  classId: string;
+  teacherId: string;
 }

@@ -34,10 +34,16 @@ export class StudentClassHistoryService {
       data: {
         studentId: createRequest.studentId,
         classId: createRequest.classId,
-        year: createRequest.year,
+        academicYearId: createRequest.academicYearId,
         semester: createRequest.semester,
       },
       include: {
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         student: {
           select: {
             id: true,
@@ -63,10 +69,14 @@ export class StudentClassHistoryService {
       id: history.id,
       studentId: history.studentId,
       classId: history.classId,
-      year: history.year,
+      academicYearId: history.academicYear.id,
       semester: history.semester,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
+      academicYear: {
+        id: history.academicYear.id,
+        name: history.academicYear.name,
+      },
       student: {
         id: history.student.id,
         user: {
@@ -107,6 +117,12 @@ export class StudentClassHistoryService {
             name: true,
           },
         },
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -114,7 +130,7 @@ export class StudentClassHistoryService {
       id: history.id,
       studentId: history.studentId,
       classId: history.classId,
-      year: history.year,
+      academicYearId: history.academicYearId,
       semester: history.semester,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
@@ -129,6 +145,10 @@ export class StudentClassHistoryService {
       class: {
         id: history.class.id,
         name: history.class.name,
+      },
+      academicYear: {
+        id: history.academicYear.id,
+        name: history.academicYear.name,
       },
     }));
   }
@@ -158,6 +178,12 @@ export class StudentClassHistoryService {
             name: true,
           },
         },
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -171,7 +197,7 @@ export class StudentClassHistoryService {
       id: history.id,
       studentId: history.studentId,
       classId: history.classId,
-      year: history.year,
+      academicYearId: history.academicYear.id,
       semester: history.semester,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
@@ -186,6 +212,10 @@ export class StudentClassHistoryService {
       class: {
         id: history.class.id,
         name: history.class.name,
+      },
+      academicYear: {
+        id: history.academicYear.id,
+        name: history.academicYear.name,
       },
     };
   }
@@ -236,6 +266,12 @@ export class StudentClassHistoryService {
             name: true,
           },
         },
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -243,7 +279,7 @@ export class StudentClassHistoryService {
       id: history.id,
       studentId: history.studentId,
       classId: history.classId,
-      year: history.year,
+      academicYearId: history.academicYear.id,
       semester: history.semester,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
@@ -258,6 +294,10 @@ export class StudentClassHistoryService {
       class: {
         id: history.class.id,
         name: history.class.name,
+      },
+      academicYear: {
+        id: history.academicYear.id,
+        name: history.academicYear.name,
       },
     };
   }

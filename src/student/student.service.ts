@@ -25,7 +25,7 @@ export class StudentService {
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
   ) {}
 
-  // ✅ CREATE Student
+  // ✅ CREATE
   async create(request: CreateStudentRequest): Promise<StudentResponse> {
     this.logger.info(`Create Student ${JSON.stringify(request)}`);
     request.dob = new Date(request.dob);
@@ -38,7 +38,7 @@ export class StudentService {
     const existEmail = await this.prismaService.user.count({
       where: { email: createRequest.email },
     });
-    if (existEmail !== 0) throw new HttpException('Email already exists', 400);
+    if (existEmail) throw new HttpException('Email already exists', 400);
 
     const hashedPassword = await bcrypt.hash(createRequest.password, 10);
 
@@ -57,26 +57,27 @@ export class StudentService {
           userId: user.id,
           schoolId: createRequest.schoolId,
           classId: createRequest.classId,
-          enrollmentNumber: createRequest.enrollmentNumber,
+          enrollmentNumber: createRequest.enrollmentNumber || undefined,
           dob: createRequest.dob,
           address: createRequest.address,
         },
         include: {
           user: true,
-          parents: {
-            include: {
-              parent: {
-                include: { user: true },
-              },
-            },
-          },
+          class: true,
+          parents: { include: { parent: { include: { user: true } } } },
         },
       });
 
       return {
         id: student.id,
         schoolId: student.schoolId,
-        classId: student.classId || undefined,
+        class: student.class
+          ? {
+              id: student.class.id,
+              name: student.class.name,
+              grade: student.class.grade,
+            }
+          : undefined,
         enrollmentNumber: student.enrollmentNumber,
         dob: student.dob,
         address: student.address || undefined,
@@ -101,6 +102,7 @@ export class StudentService {
     const students = await this.prismaService.student.findMany({
       include: {
         user: true,
+        class: true,
         parents: { include: { parent: { include: { user: true } } } },
       },
       orderBy: { createdAt: 'desc' },
@@ -109,7 +111,13 @@ export class StudentService {
     return students.map((s) => ({
       id: s.id,
       schoolId: s.schoolId,
-      classId: s.classId || undefined,
+      class: s.class
+        ? {
+            id: s.class.id,
+            name: s.class.name,
+            grade: s.class.grade,
+          }
+        : undefined,
       enrollmentNumber: s.enrollmentNumber,
       dob: s.dob,
       address: s.address || undefined,
@@ -134,6 +142,7 @@ export class StudentService {
       where: { id },
       include: {
         user: true,
+        class: true,
         parents: { include: { parent: { include: { user: true } } } },
       },
     });
@@ -144,7 +153,13 @@ export class StudentService {
     return {
       id: student.id,
       schoolId: student.schoolId,
-      classId: student.classId || undefined,
+      class: student.class
+        ? {
+            id: student.class.id,
+            name: student.class.name,
+            grade: student.class.grade,
+          }
+        : undefined,
       enrollmentNumber: student.enrollmentNumber,
       dob: student.dob,
       address: student.address || undefined,
@@ -163,17 +178,14 @@ export class StudentService {
     };
   }
 
-  // ✅ UPDATE Student
+  // ✅ UPDATE
   async update(
     id: string,
     data: UpdateStudentRequest,
   ): Promise<StudentResponse> {
     const student = await this.prismaService.student.findUnique({
       where: { id },
-      include: {
-        user: true,
-        parents: { include: { parent: { include: { user: true } } } },
-      },
+      include: { user: true },
     });
     if (!student)
       throw new NotFoundException(`Student with id ${id} not found`);
@@ -219,6 +231,7 @@ export class StudentService {
         },
         include: {
           user: true,
+          class: true,
           parents: { include: { parent: { include: { user: true } } } },
         },
       });
@@ -226,7 +239,13 @@ export class StudentService {
       return {
         id: updatedStudent.id,
         schoolId: updatedStudent.schoolId,
-        classId: updatedStudent.classId || undefined,
+        class: updatedStudent.class
+          ? {
+              id: updatedStudent.class.id,
+              name: updatedStudent.class.name,
+              grade: updatedStudent.class.grade,
+            }
+          : undefined,
         enrollmentNumber: updatedStudent.enrollmentNumber,
         dob: updatedStudent.dob,
         address: updatedStudent.address || undefined,
@@ -246,7 +265,7 @@ export class StudentService {
     });
   }
 
-  // ✅ DELETE Student
+  // ✅ DELETE
   async delete(id: string): Promise<{ message: string }> {
     const student = await this.prismaService.student.findUnique({
       where: { id },

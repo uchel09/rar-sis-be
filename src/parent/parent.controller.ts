@@ -15,6 +15,7 @@ import {
   UpdateParentRequest,
 } from 'src/model/parent.model';
 import { ParentResponse } from 'src/model/parent.model';
+import { WebResponse } from 'src/model/web.model';
 
 @Controller('/api/parents')
 export class ParentController {
@@ -22,20 +23,33 @@ export class ParentController {
 
   // ✅ CREATE
   @Post()
-  async create(@Body() body: CreateParentRequest): Promise<ParentResponse> {
-    return await this.parentService.create(body);
+  async create(
+    @Body() body: CreateParentRequest,
+  ): Promise<WebResponse<ParentResponse>> {
+    const result = await this.parentService.create(body);
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ ALL
   @Get()
-  async findAll(): Promise<ParentResponse[]> {
-    return await this.parentService.findAll();
+  async findAll(): Promise<WebResponse<ParentResponse[]>> {
+    const result = await this.parentService.findAll();
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ BY ID
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<ParentResponse> {
-    return await this.parentService.findById(id);
+  async findById(
+    @Param('id') id: string,
+  ): Promise<WebResponse<ParentResponse>> {
+    const result = await this.parentService.findById(id);
+    return {
+      data: result,
+    };
   }
 
   // ✅ UPDATE
@@ -43,8 +57,11 @@ export class ParentController {
   async update(
     @Param('id') id: string,
     @Body() body: UpdateParentRequest,
-  ): Promise<ParentResponse> {
-    return await this.parentService.update(id, body);
+  ): Promise<WebResponse<ParentResponse>> {
+    const result = await this.parentService.update(id, body);
+    return {
+      data: result,
+    };
   }
 
   // ✅ DELETE

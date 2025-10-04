@@ -1,5 +1,3 @@
-
-
 export interface CreateTeacherRequest {
   email: string;
   password: string;
@@ -8,14 +6,15 @@ export interface CreateTeacherRequest {
   nik: string; // Nomor induk teacher (unik)
   nip?: string; // Optional nomor pegawai
   hireDate: Date;
-  dob : Date;
+  dob: Date;
   phone: string;
+  subjectClassTeacher?: { classId: string; subjectId: string }[];
 }
 
 // Request DTO untuk UPDATE
 export interface UpdateTeacherRequest {
   fullName?: string; // Bisa update nama user
-  dob? : Date;
+  dob?: Date;
   email?: string; // Bisa update email
   password?: string; // Bisa update password
   schoolId?: string; // Pindah sekolah
@@ -23,6 +22,7 @@ export interface UpdateTeacherRequest {
   nip?: string;
   hireDate?: Date;
   phone: string;
+  subjectClassTeacher?: { classId: string; subjectId: string }[];
 }
 
 // Response DTO
@@ -39,6 +39,14 @@ export interface TeacherResponse {
     fullName: string;
     email: string;
   };
+  subjectClassTeacher?: SubjectClassTeacherResponse[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface SubjectClassTeacherResponse {
+  id: string;
+  subjectId: string;
+  classId: string;
+  teacherId: string;
 }

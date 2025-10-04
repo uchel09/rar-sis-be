@@ -7,6 +7,10 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+// generator erd {
+//   provider = "prisma-erd-generator"
+//   output   = "./erd.svg"   // hasilnya file gambar (svg/png)
+// }
 
 enum Role {
   SUPERADMIN
@@ -136,6 +140,8 @@ model School {
   attendances Attendance[]
 
   timetables Timetable[]
+
+  studentDrafts StudentDraft[]
 }
 
 model SchoolAdmin {
@@ -157,7 +163,7 @@ model Student {
   userId           String   @unique
   schoolId         String
   classId          String?
-  enrollmentNumber String   @unique
+  enrollmentNumber String?  @unique
   dob              DateTime
   address          String?
   createdAt        DateTime @default(now())
@@ -170,27 +176,35 @@ model Student {
   parents               StudentParent[]
   studentClassHistories StudentClassHistory[]
   attendances           Attendance[]
+  StudentDraft          StudentDraft[]
 }
 
 model StudentDraft {
-  id               String   @id @default(uuid())
+  id               String      @id @default(uuid())
   email            String
   fullName         String
   schoolId         String
-  classId          String? // kelas saat input bisa null
-  targetClassId    String? // kelas tujuan (naik kelas)
-  enrollmentNumber String
+  academicYearId   String
+  studentId        String?
+  targetClassId    String?
+  enrollmentNumber String?     @unique
   dob              DateTime
   address          String?
+  parents          Json
+  grade            Grade
+  draftType        DraftType
+  status           DraftStatus @default(PENDING)
+  createdBy        String? // userId yang input
+  verifiedBy       String? // userId staff yang memverifikasi
+  verifiedAt       DateTime?
+  rejectionReason  String? //untuk new student
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
-  // Simpan sementara info orang tua/wali
-  parents Json // [{ fullName: string, phone?: string, address?: string, email?: string }]
-  grade   Grade
-
-  draftType DraftType
-  status    DraftStatus @default(PENDING)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  student      Student?     @relation(fields: [studentId], references: [id])
+  school       School       @relation(fields: [schoolId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  targetClass  Class?       @relation(fields: [targetClassId], references: [id])
 }
 
 model Parent {
@@ -231,12 +245,11 @@ model Teacher {
 
   user        User         @relation(fields: [userId], references: [id])
   school      School       @relation(fields: [schoolId], references: [id])
-  classes     Class[]      @relation("ClassTeacher")
   attendances Attendance[]
 
   homerooms Class[] @relation("HomeroomClass")
 
-  Timetables Timetable[]
+  timetables Timetable[]
 
   subjectClassTeacher SubjectClassTeacher[]
 }
@@ -260,36 +273,38 @@ model Staff {
 model Class {
   id                String   @id @default(uuid())
   schoolId          String
-  teacherId         String? // Guru pengajar utama
   homeroomTeacherId String? // Wali kelas
   name              String
-  year              Int
+  academicYearId    String
   grade             Grade // kelas berapa
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   school                School                @relation(fields: [schoolId], references: [id])
-  teacher               Teacher?              @relation("ClassTeacher", fields: [teacherId], references: [id])
-  homeroomTeacher       Teacher?              @relation("HomeroomClass", fields: [homeroomTeacherId], references: [id])
   students              Student[]
   studentClassHistories StudentClassHistory[] // gunakan camelCase
 
   timetables Timetable[]
 
   subjectClassTeacher SubjectClassTeacher[]
+
+  homeroomTeacher Teacher?       @relation("HomeroomClass", fields: [homeroomTeacherId], references: [id])
+  academicYear    AcademicYear   @relation(fields: [academicYearId], references: [id])
+  StudentDraft    StudentDraft[]
 }
 
 model StudentClassHistory {
-  id        String   @id @default(uuid())
-  studentId String
-  classId   String
-  year      Int
-  semester  Semester
+  id             String   @id @default(uuid())
+  studentId      String
+  classId        String
+  academicYearId String
+  semester       Semester
 
-  student   Student  @relation(fields: [studentId], references: [id])
-  class     Class    @relation(fields: [classId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  student      Student      @relation(fields: [studentId], references: [id])
+  class        Class        @relation(fields: [classId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 model Subject {
@@ -300,9 +315,9 @@ model Subject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school      School       @relation(fields: [schoolId], references: [id])
-  attendances Attendance[]
-  timetables  Timetable[]
+  school              School                @relation(fields: [schoolId], references: [id])
+  attendances         Attendance[]
+  timetables          Timetable[]
   subjectClassTeacher SubjectClassTeacher[]
 }
 
@@ -310,7 +325,7 @@ model Attendance {
   id          String           @id @default(uuid())
   studentId   String
   subjectId   String
-  timetableId String 
+  timetableId String
   teacherId   String
   schoolId    String
   date        DateTime
@@ -320,13 +335,13 @@ model Attendance {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  student              Student     @relation(fields: [studentId], references: [id])
-  subject              Subject     @relation(fields: [subjectId], references: [id])
-  teacher              Teacher    @relation(fields: [teacherId], references: [id])
-  school               School      @relation(fields: [schoolId], references: [id])
-  timetableAttendances Timetable[] @relation("TimetableAttendance")
+  student   Student   @relation(fields: [studentId], references: [id])
+  subject   Subject   @relation(fields: [subjectId], references: [id])
+  teacher   Teacher   @relation(fields: [teacherId], references: [id])
+  school    School    @relation(fields: [schoolId], references: [id])
+  timetable Timetable @relation(fields: [timetableId], references: [id])
 
-  @@unique([studentId, subjectId, date, timetableId]) // fleksibel untuk multiple session
+  @@unique([studentId, timetableId, date])
 }
 
 model Timetable {
@@ -336,18 +351,17 @@ model Timetable {
   subjectId String
   teacherId String
   semester  Semester
-  dayOfWeek DayOfWeek // 1 = Senin, 7 = Minggu
-  startTime String // format HH:mm
-  endTime   String // format HH:mm
+  dayOfWeek DayOfWeek
+  startTime DateTime
+  endTime   DateTime
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  school  School  @relation(fields: [schoolId], references: [id])
-  class   Class   @relation(fields: [classId], references: [id])
-  subject Subject @relation(fields: [subjectId], references: [id])
-  teacher Teacher @relation(fields: [teacherId], references: [id])
-
-  timetableAttendances Attendance[] @relation("TimetableAttendance")
+  school      School       @relation(fields: [schoolId], references: [id])
+  class       Class        @relation(fields: [classId], references: [id])
+  subject     Subject      @relation(fields: [subjectId], references: [id])
+  teacher     Teacher      @relation(fields: [teacherId], references: [id])
+  attendances Attendance[]
 }
 
 model SubjectClassTeacher {
@@ -362,3 +376,142 @@ model SubjectClassTeacher {
 
   @@unique([subjectId, classId, teacherId])
 }
+
+model AcademicYear {
+  id        String   @id @default(uuid())
+  name      String   @unique // "2024/2025"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classes       Class[]
+  studentDrafts StudentDraft[]
+
+  studentClassHistories StudentClassHistory[]
+}
+
+// =================================== Gambaran Fitur Lanjutan ====================================
+// model EmployeeAttendance {
+//   id        String   @id @default(uuid())
+//   userId    String            // bisa teacher atau staff
+//   schoolId  String
+//   date      DateTime          // tanggal absensi
+//   checkIn   DateTime?         // jam masuk
+//   checkOut  DateTime?         // jam pulang
+//   status    AttendanceStatus
+//   note      String?
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   user   User   @relation(fields: [userId], references: [id])
+//   school School @relation(fields: [schoolId], references: [id])
+
+//   @@unique([userId, date]) // 1 user hanya boleh absen sekali per hari
+// }
+
+
+// model Assessment {
+//   id          String   @id @default(uuid())
+//   subjectId   String
+//   classId     String
+//   teacherId   String
+//   schoolId    String
+//   academicYearId String
+//   semester    Semester
+//   type        AssessmentType // TUGAS, UTS, UAS, QUIZ, dll
+//   title       String
+//   description String?
+//   date        DateTime
+//   maxScore    Int
+
+//   subject      Subject      @relation(fields: [subjectId], references: [id])
+//   class        Class        @relation(fields: [classId], references: [id])
+//   teacher      Teacher      @relation(fields: [teacherId], references: [id])
+//   school       School       @relation(fields: [schoolId], references: [id])
+//   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+//   grades AssessmentGrade[]
+// }
+
+// model AssessmentGrade {
+//   id           String @id @default(uuid())
+//   assessmentId String
+//   studentId    String
+//   score        Int
+//   note         String?
+
+//   assessment Assessment @relation(fields: [assessmentId], references: [id])
+//   student    Student    @relation(fields: [studentId], references: [id])
+
+//   @@unique([assessmentId, studentId])
+// }
+
+// enum AssessmentType {
+//   ASSIGNMENT // Tugas
+//   MID_EXAM   // UTS
+//   FINAL_EXAM // UAS
+//   PRACTICAL  // Praktek
+//   OTHER
+// }
+
+// model Exam {
+//   id             String   @id @default(uuid())
+//   subjectId      String
+//   classId        String
+//   teacherId      String
+//   academicYearId String
+//   semester       Semester
+//   title          String      // misal: "UTS Matematika Semester 1"
+//   description    String?
+//   startTime      DateTime
+//   endTime        DateTime
+//   duration       Int         // menit
+//   createdAt      DateTime @default(now())
+//   updatedAt      DateTime @updatedAt
+
+//   subject      Subject      @relation(fields: [subjectId], references: [id])
+//   class        Class        @relation(fields: [classId], references: [id])
+//   teacher      Teacher      @relation(fields: [teacherId], references: [id])
+//   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+//   questions   ExamQuestion[]
+//   studentExams StudentExam[]
+// }
+
+// model ExamQuestion {
+//   id        String   @id @default(uuid())
+//   examId    String
+//   question  String
+//   options   Json       // simpan pilihan jawaban dalam JSON
+//   answerKey String     // jawaban benar
+//   score     Float      // bobot soal
+
+//   exam Exam @relation(fields: [examId], references: [id])
+//   answers ExamAnswer[]
+// }
+
+// model StudentExam {
+//   id        String   @id @default(uuid())
+//   examId    String
+//   studentId String
+//   startedAt DateTime?
+//   submittedAt DateTime?
+//   score     Float?
+
+//   exam    Exam    @relation(fields: [examId], references: [id])
+//   student Student @relation(fields: [studentId], references: [id])
+//   answers ExamAnswer[]
+// }
+
+// model ExamAnswer {
+//   id            String   @id @default(uuid())
+//   studentExamId String
+//   questionId    String
+//   answer        String
+//   isCorrect     Boolean?
+
+//   studentExam StudentExam  @relation(fields: [studentExamId], references: [id])
+//   question    ExamQuestion @relation(fields: [questionId], references: [id])
+// }

@@ -15,6 +15,7 @@ import {
   UpdateStaffRequest,
   StaffResponse,
 } from 'src/model/staff.model';
+import { WebResponse } from 'src/model/web.model';
 
 @Controller('/api/staffs')
 export class StaffController {
@@ -22,20 +23,31 @@ export class StaffController {
 
   // ✅ CREATE Staff
   @Post()
-  async create(@Body() request: CreateStaffRequest): Promise<StaffResponse> {
-    return this.staffService.create(request);
+  async create(
+    @Body() request: CreateStaffRequest,
+  ): Promise<WebResponse<StaffResponse>> {
+    const result = await this.staffService.create(request);
+    return {
+      data: result,
+    };
   }
 
   // ✅ GET ALL Staff
   @Get()
-  async findAll(): Promise<StaffResponse[]> {
-    return this.staffService.findAll();
+  async findAll(): Promise<WebResponse<StaffResponse[]>> {
+    const result = await this.staffService.findAll();
+    return {
+      data: result,
+    };
   }
 
   // ✅ GET Staff BY ID
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<StaffResponse> {
-    return this.staffService.findById(id);
+  async findById(@Param('id') id: string): Promise<WebResponse<StaffResponse>> {
+    const result = await this.staffService.findById(id);
+    return {
+      data: result,
+    };
   }
 
   // ✅ UPDATE Staff
@@ -43,16 +55,17 @@ export class StaffController {
   async update(
     @Param('id') id: string,
     @Body() data: UpdateStaffRequest,
-  ): Promise<StaffResponse> {
-    return this.staffService.update(id, data);
+  ): Promise<WebResponse<StaffResponse>> {
+    const result = await this.staffService.update(id, data);
+    return {
+      data: result,
+    };
   }
 
   // ✅ DELETE Staff
   @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<{ message: string }> {
-   return await this.staffService.delete(id);
+    return await this.staffService.delete(id);
   }
-
-
 }

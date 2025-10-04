@@ -18,11 +18,14 @@ import { APP_FILTER } from '@nestjs/core';
       isGlobal: true,
     }),
   ],
-  providers: [PrismaService, VallidationService, 
+  providers: [
+    PrismaService,
+    VallidationService,
+
     {
-        provide: APP_FILTER,
-        useClass: ErrorFilter
-    }
+      provide: APP_FILTER,
+      useClass: ErrorFilter,
+    },
   ],
   exports: [PrismaService, VallidationService],
 })

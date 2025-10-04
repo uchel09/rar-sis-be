@@ -78,8 +78,17 @@ export class TeacherService {
           hireDate: createRequest.hireDate,
           dob: createRequest.dob,
           phone: createRequest.phone,
+          subjectClassTeacher: createRequest.subjectClassTeacher
+            ? {
+                create: createRequest.subjectClassTeacher.map((st) => ({
+                  classId: st.classId,
+                  subjectId: st.subjectId,
+                })),
+              }
+            : undefined,
         },
-        include: { user: true },
+
+        include: { user: true, subjectClassTeacher: true },
       });
     });
 
@@ -97,6 +106,19 @@ export class TeacherService {
         fullName: teacher.user.fullName,
         email: teacher.user.email,
       },
+      subjectClassTeacher: (
+        teacher.subjectClassTeacher as {
+          teacherId: string;
+          subjectId: string;
+          id: string;
+          classId: string;
+        }[]
+      ).map((s) => ({
+        id: s.id,
+        classId: s.classId,
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+      })),
       createdAt: teacher.createdAt,
       updatedAt: teacher.updatedAt,
     };
@@ -106,7 +128,7 @@ export class TeacherService {
   async findAll(): Promise<TeacherResponse[]> {
     this.logger.info('Find all teachers');
     const teachers = await this.prismaService.teacher.findMany({
-      include: { user: true },
+      include: { user: true, subjectClassTeacher: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -122,6 +144,19 @@ export class TeacherService {
         fullName: teacher.user.fullName,
         email: teacher.user.email,
       },
+      subjectClassTeacher: (
+        teacher.subjectClassTeacher as {
+          teacherId: string;
+          subjectId: string;
+          id: string;
+          classId: string;
+        }[]
+      ).map((s) => ({
+        id: s.id,
+        classId: s.classId,
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+      })),
       createdAt: teacher.createdAt,
       updatedAt: teacher.updatedAt,
     }));
@@ -132,7 +167,7 @@ export class TeacherService {
     this.logger.info(`Find teacher by id: ${id}`);
     const teacher = await this.prismaService.teacher.findUnique({
       where: { id },
-      include: { user: true },
+      include: { user: true, subjectClassTeacher: true },
     });
     if (!teacher) {
       throw new NotFoundException(`Teacher with id ${id} not found`);
@@ -150,6 +185,19 @@ export class TeacherService {
         fullName: teacher.user.fullName,
         email: teacher.user.email,
       },
+      subjectClassTeacher: (
+        teacher.subjectClassTeacher as {
+          teacherId: string;
+          subjectId: string;
+          id: string;
+          classId: string;
+        }[]
+      ).map((s) => ({
+        id: s.id,
+        classId: s.classId,
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+      })),
       createdAt: teacher.createdAt,
       updatedAt: teacher.updatedAt,
     };
@@ -230,8 +278,16 @@ export class TeacherService {
             hireDate: updateRequest.hireDate,
             dob: updateRequest.dob,
             phone: updateRequest.phone,
+            subjectClassTeacher: updateRequest.subjectClassTeacher
+              ? {
+                  create: updateRequest.subjectClassTeacher.map((st) => ({
+                    classId: st.classId,
+                    subjectId: st.subjectId,
+                  })),
+                }
+              : undefined,
           },
-          include: { user: true },
+          include: { user: true, subjectClassTeacher: true },
         });
       },
     );
@@ -248,6 +304,19 @@ export class TeacherService {
         fullName: updatedTeacher.user.fullName,
         email: updatedTeacher.user.email,
       },
+      subjectClassTeacher: (
+        updatedTeacher.subjectClassTeacher as {
+          teacherId: string;
+          subjectId: string;
+          id: string;
+          classId: string;
+        }[]
+      ).map((s) => ({
+        id: s.id,
+        classId: s.classId,
+        teacherId: s.teacherId,
+        subjectId: s.subjectId,
+      })),
       createdAt: updatedTeacher.createdAt,
       updatedAt: updatedTeacher.updatedAt,
     };

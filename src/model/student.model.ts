@@ -6,7 +6,7 @@ export interface CreateStudentRequest {
   fullName: string;
   schoolId: string;
   classId?: string;
-  enrollmentNumber: string;
+  enrollmentNumber?: string;
   dob: Date;
   address?: string;
   parentIds?: string[]; // jika ingin langsung assign parent
@@ -27,8 +27,12 @@ export interface UpdateStudentRequest {
 export interface StudentResponse {
   id: string;
   schoolId: string;
-  classId?: string | null;
-  enrollmentNumber: string;
+  class?: {
+    id: string;
+    name: string; // ✅ ambil field nama class
+    grade: string; // kalau ada field tambahan
+  } ;
+  enrollmentNumber: string | null;
   dob: Date;
   address?: string;
   user: {
@@ -44,3 +48,4 @@ export interface StudentResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+

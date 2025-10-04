@@ -1,37 +1,45 @@
-import { DraftStatus, DraftType, Grade } from "generated/prisma";
+import { DraftStatus, DraftType, Grade } from 'generated/prisma';
 
 export interface CreateStudentDraftRequest {
   email: string;
   fullName: string;
   schoolId: string;
-  classId?: string;
   targetClassId?: string;
-  enrollmentNumber: string;
+  academicYearId: string;
+  enrollmentNumber?: string;
   dob: Date;
   address?: string;
   grade: Grade;
+  createdBy?: string;
+  verifiedBy?: string;
+  verifiedAt?: Date;
+  rejectionReason?: string;
 
   parents: {
     id?: string;
     fullName: string;
-    phone?: string;
+    phone: string;
     address?: string;
-    email?: string;
+    email: string;
   }[];
 
   draftType: DraftType;
-  status: DraftStatus;
+  status?: DraftStatus; // default PENDING
 }
 
 export interface UpdateStudentDraftRequest {
   email?: string;
   fullName?: string;
-  classId?: string;
   targetClassId?: string;
   enrollmentNumber?: string;
   dob?: Date;
   address?: string;
-  grade: Grade;
+  academicYearId?: string;
+  grade?: Grade;
+  createdBy?: string;
+  verifiedBy?: string;
+  verifiedAt?: Date;
+  rejectionReason?: string;
 
   parents?: {
     id?: string;
@@ -41,27 +49,41 @@ export interface UpdateStudentDraftRequest {
     email?: string;
   }[];
 
-  draftType: DraftType;
-  status: DraftStatus;
+  draftType?: DraftType;
+  status?: DraftStatus;
 }
+
 export interface StudentDraftResponse {
   id: string;
   email: string;
   fullName: string;
   schoolId: string;
-  classId?: string;
+  enrollmentNumber?: string;
   targetClassId?: string;
-  enrollmentNumber: string;
+  academicYear: {
+    id: string;
+    name: string
+  }
+  student?: {
+    id: string;
+    fullname: string;
+    classId: string;
+    className: string;
+  }
   dob: Date;
   address?: string;
   grade: Grade;
+  createdBy?: string;
+  verifiedBy?: string;
+  verifiedAt?: Date;
+  rejectionReason?: string;
 
   parents: {
     id?: string;
     fullName: string;
-    phone?: string;
+    phone: string;
     address?: string;
-    email?: string;
+    email: string;
   }[];
 
   draftType: DraftType;
@@ -69,3 +91,4 @@ export interface StudentDraftResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+

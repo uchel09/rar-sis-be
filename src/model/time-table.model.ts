@@ -26,8 +26,8 @@ export interface TimetableResponse {
   teacherId: string;
   semester: Semester;
   dayOfWeek: DayOfWeek;
-  startTime: string;
-  endTime: string;
+  startTime: Date;
+  endTime: Date;
   createdAt: Date;
   updatedAt: Date;
 

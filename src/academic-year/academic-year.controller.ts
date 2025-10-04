@@ -8,29 +8,24 @@ import {
   Put,
   HttpCode,
 } from '@nestjs/common';
-import { ClassService } from './class.service';
+import { AcademicYearService } from './academic-year.service';
 import {
-  CreateClassRequest,
-  UpdateClassRequest,
-  ClassResponse,
-} from 'src/model/class.model';
+  CreateAcademicYearRequest,
+  UpdateAcademicYearRequest,
+} from 'src/model/academic-year.model';
+import { AcademicYear } from 'generated/prisma';
 import { WebResponse } from 'src/model/web.model';
-import { UtilService } from 'src/common/util.service';
 
-@Controller('/api/classes')
-export class ClassController {
-  constructor(private readonly classService: ClassService) {}
+@Controller('/api/academic-years')
+export class AcademicYearController {
+  constructor(private readonly classService: AcademicYearService) {}
 
   // ✅ CREATE
   @Post()
   async create(
-    @Body() request: CreateClassRequest,
-  ): Promise<WebResponse<ClassResponse>> {
-    const normalizedRequest = UtilService.normalizeOptionalEmptyStrings(
-      request,
-      ['homeroomTeacherId'],
-    );
-    const result = await this.classService.create(normalizedRequest);
+    @Body() request: CreateAcademicYearRequest,
+  ): Promise<WebResponse<AcademicYear>> {
+    const result = await this.classService.create(request);
     return {
       data: result,
     };
@@ -38,7 +33,7 @@ export class ClassController {
 
   // ✅ READ ALL
   @Get()
-  async findAll(): Promise<WebResponse<ClassResponse[]>> {
+  async findAll(): Promise<WebResponse<AcademicYear[]>> {
     const result = await this.classService.findAll();
     return {
       data: result,
@@ -47,7 +42,7 @@ export class ClassController {
 
   // ✅ READ BY ID
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<WebResponse<ClassResponse>> {
+  async findById(@Param('id') id: string): Promise<WebResponse<AcademicYear>> {
     const result = await this.classService.findById(id);
     return {
       data: result,
@@ -58,8 +53,8 @@ export class ClassController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() data: UpdateClassRequest,
-  ): Promise<WebResponse<ClassResponse>> {
+    @Body() data: UpdateAcademicYearRequest,
+  ): Promise<WebResponse<AcademicYear>> {
     const result = await this.classService.update(id, data);
     return {
       data: result,

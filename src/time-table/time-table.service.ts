@@ -16,7 +16,7 @@ import { Logger } from 'winston';
 import { TimetableValidation } from './time-table.validation';
 
 @Injectable()
-export class TimetableService {
+export class TimeTableService {
   constructor(
     private validationService: VallidationService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,

@@ -7,7 +7,7 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { TimetableService } from './time-table.service';
+import { TimeTableService } from './time-table.service';
 import { WebResponse } from 'src/model/web.model';
 import {
   CreateTimetableRequest,
@@ -16,8 +16,8 @@ import {
 } from 'src/model/time-table.model';
 
 @Controller('/api/timetables')
-export class TimetableController {
-  constructor(private readonly timetableService: TimetableService) {}
+export class TimeTableController {
+  constructor(private readonly timetableService: TimeTableService) {}
 
   // ✅ CREATE
   @Post()

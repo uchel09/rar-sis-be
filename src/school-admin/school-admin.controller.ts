@@ -15,6 +15,7 @@ import {
   UpdateSchoolAdminRequest,
   SchoolAdminResponse,
 } from 'src/model/school-admin.model';
+import { WebResponse } from 'src/model/web.model';
 
 @Controller('/api/school-admins')
 export class SchoolAdminController {
@@ -24,20 +25,31 @@ export class SchoolAdminController {
   @Post()
   async create(
     @Body() request: CreateSchoolAdminRequest,
-  ): Promise<SchoolAdminResponse> {
-    return await this.schoolAdminService.create(request);
+  ): Promise<WebResponse<SchoolAdminResponse>> {
+    const result = await this.schoolAdminService.create(request);
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ ALL
   @Get()
-  async findAll(): Promise<SchoolAdminResponse[]> {
-    return await this.schoolAdminService.findAll();
+  async findAll(): Promise<WebResponse<SchoolAdminResponse[]>> {
+    const result = await this.schoolAdminService.findAll();
+    return {
+      data: result,
+    };
   }
 
   // ✅ READ BY ID
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<SchoolAdminResponse> {
-    return await this.schoolAdminService.findById(id);
+  async findById(
+    @Param('id') id: string,
+  ): Promise<WebResponse<SchoolAdminResponse>> {
+    const result = await this.schoolAdminService.findById(id);
+    return {
+      data: result,
+    };
   }
 
   // ✅ UPDATE
@@ -45,8 +57,11 @@ export class SchoolAdminController {
   async update(
     @Param('id') id: string,
     @Body() request: UpdateSchoolAdminRequest,
-  ): Promise<SchoolAdminResponse> {
-    return await this.schoolAdminService.update(id, request);
+  ): Promise<WebResponse<SchoolAdminResponse>> {
+    const result = await this.schoolAdminService.update(id, request);
+    return {
+      data: result,
+    };
   }
 
   // ✅ DELETE
