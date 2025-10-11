@@ -25,6 +25,7 @@ export interface CreateStudentDraftRequest {
     email: string;
     nik: string;
     gender: Gender;
+    dob: Date;
   }[];
 
   draftType: DraftType;
@@ -54,6 +55,7 @@ export interface UpdateStudentDraftRequest {
     email?: string;
     nik?: string;
     gender?: Gender
+    dob?: Date
   }[];
 
   draftType?: DraftType;

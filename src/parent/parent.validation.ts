@@ -8,9 +8,10 @@ export class ParentValidation {
     fullName: z.string().min(3),
     phone: z.string(),
     address: z.string().optional(),
-    dob: z.coerce.date(),
+    dob: z.coerce.date().optional(),
     nik: z.string(),
     gender: z.enum(Gender, { message: 'Invalid Gender value' }),
+    isActive: z.boolean(),
     studentIds: z.array(z.uuid()).optional(),
   });
 
@@ -23,6 +24,7 @@ export class ParentValidation {
     dob: z.coerce.date().optional(),
     nik: z.string().optional(),
     gender: z.enum(Gender, { message: 'Invalid Gender value' }).optional(),
+    isActive: z.boolean(),
     studentIds: z.array(z.uuid()).optional(),
   });
 }

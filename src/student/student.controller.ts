@@ -69,9 +69,7 @@ export class StudentController {
       data,
       ['enrollmentNumber', 'address', 'classId'],
     );
-    console.log(id);
-    console.log('Update =------');
-    console.log(normalizedRequest);
+ 
     const result = await this.studentService.update(id, normalizedRequest);
     return {
       data: result,

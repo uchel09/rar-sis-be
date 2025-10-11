@@ -802,7 +802,6 @@ export class StudentDraftService {
     };
   }
 
-  async createStudentParentNewStudentDraft(){}
   // Aprove new Student ==========================================
 
   async rejectNewStudent(

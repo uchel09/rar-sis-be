@@ -232,7 +232,7 @@ model Parent {
   userId    String   @unique
   phone     String
   address   String?
-  dob       DateTime
+  dob       DateTime?
   nik       String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

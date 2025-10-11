@@ -28,7 +28,6 @@ export class ParentService {
   // ✅ CREATE Parent
   async create(request: CreateParentRequest): Promise<ParentResponse> {
     this.logger.info(`Create Parent ${JSON.stringify(request)}`);
-    request.dob = new Date(request.dob);
 
     const createRequest = this.validationService.validate<CreateParentRequest>(
       ParentValidation.CREATE,
@@ -64,10 +63,10 @@ export class ParentService {
       const parent = await tx.parent.create({
         data: {
           userId: user.id,
-          dob: createRequest.dob,
           phone: createRequest.phone,
           address: createRequest.address,
           nik: createRequest.nik,
+          isActive: createRequest.isActive || true,
         },
       });
 
@@ -77,6 +76,7 @@ export class ParentService {
         phone: parent.phone || undefined,
         address: parent.address || undefined,
         nik: parent.nik,
+        isActive: parent.isActive,
         user: {
           gender: user.gender,
           id: user.id,
@@ -124,6 +124,7 @@ export class ParentService {
         id: s.student.id,
         fullName: s.student.user.fullName, // ambil dari student.user
       })),
+      isActive: p.isActive,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
@@ -151,10 +152,10 @@ export class ParentService {
 
     return {
       id: parent.id,
-      dob: parent.dob,
       phone: parent.phone || undefined,
       address: parent.address || undefined,
       nik: parent.nik,
+      isActive: parent.isActive,
       user: {
         id: parent.user.id,
         fullName: parent.user.fullName,
@@ -191,10 +192,10 @@ export class ParentService {
 
     return {
       id: parent.id,
-      dob: parent.dob,
       phone: parent.phone || undefined,
       address: parent.address || undefined,
       nik: parent.nik,
+      isActive: parent.isActive,
       user: {
         gender: parent.user.gender,
         id: parent.user.id,
@@ -227,7 +228,6 @@ export class ParentService {
 
     if (!parent) throw new NotFoundException(`Parent with id ${id} not found`);
 
-    if (data.dob) data.dob = new Date(data.dob);
 
     const updateRequest = this.validationService.validate<UpdateParentRequest>(
       ParentValidation.UPDATE,
@@ -247,7 +247,7 @@ export class ParentService {
       const userData: Prisma.UserUpdateInput = {};
       if (updateRequest.email) userData.email = updateRequest.email;
       if (updateRequest.fullName) userData.fullName = updateRequest.fullName;
-      if (updateRequest.gender) userData.fullName = updateRequest.gender;
+      if (updateRequest.gender) userData.gender = updateRequest.gender;
       if (updateRequest.password)
         userData.password = await bcrypt.hash(updateRequest.password, 10);
 
@@ -259,7 +259,6 @@ export class ParentService {
       const updatedParent = await tx.parent.update({
         where: { id },
         data: {
-          dob: updateRequest.dob,
           phone: updateRequest.phone,
           address: updateRequest.address,
           nik: updateRequest.nik,
@@ -279,6 +278,7 @@ export class ParentService {
         phone: updatedParent.phone || undefined,
         address: updatedParent.address || undefined,
         nik: updatedParent.nik,
+        isActive: updatedParent.isActive,
         user: {
           id: updatedUser.id,
           fullName: updatedUser.fullName,

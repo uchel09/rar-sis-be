@@ -12,6 +12,7 @@ export class StudentDraftValidation {
     email: z.email({ message: 'Invalid email address' }),
     nik: z.string(),
     gender: z.enum(Gender, { message: 'Invalid Gender value' }),
+
   });
 
   static readonly CREATE = z.object({

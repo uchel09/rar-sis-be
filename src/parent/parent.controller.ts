@@ -26,6 +26,7 @@ export class ParentController {
   async create(
     @Body() body: CreateParentRequest,
   ): Promise<WebResponse<ParentResponse>> {
+    console.log(body)
     const result = await this.parentService.create(body);
     return {
       data: result,
