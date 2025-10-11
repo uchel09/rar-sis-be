@@ -36,6 +36,10 @@ export class StudentClassHistoryService {
         classId: createRequest.classId,
         academicYearId: createRequest.academicYearId,
         semester: createRequest.semester,
+        isRepeatedYear: createRequest.isRepeatedYear,
+        remark: createRequest.remark,
+        studentStatus: createRequest.studentStatus,
+        grade: createRequest.grade,
       },
       include: {
         academicYear: {
@@ -69,10 +73,14 @@ export class StudentClassHistoryService {
       id: history.id,
       studentId: history.studentId,
       classId: history.classId,
-      academicYearId: history.academicYear.id,
+      academicYearId: history.academicYearId,
       semester: history.semester,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
+      isRepeatedYear: history.isRepeatedYear,
+      remark: history.remark,
+      studentStatus: history.studentStatus,
+      grade: history.grade,
       academicYear: {
         id: history.academicYear.id,
         name: history.academicYear.name,
@@ -132,8 +140,13 @@ export class StudentClassHistoryService {
       classId: history.classId,
       academicYearId: history.academicYearId,
       semester: history.semester,
+      isRepeatedYear: history.isRepeatedYear,
+      remark: history.remark,
+      studentStatus: history.studentStatus,
+      grade: history.grade,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
+
       student: {
         id: history.student.id,
         user: {
@@ -201,6 +214,10 @@ export class StudentClassHistoryService {
       semester: history.semester,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
+      isRepeatedYear: history.isRepeatedYear,
+      remark: history.remark,
+      studentStatus: history.studentStatus,
+      grade: history.grade,
       student: {
         id: history.student.id,
         user: {
@@ -283,6 +300,10 @@ export class StudentClassHistoryService {
       semester: history.semester,
       createdAt: history.createdAt,
       updatedAt: history.updatedAt,
+      isRepeatedYear: history.isRepeatedYear,
+      remark: history.remark,
+      studentStatus: history.studentStatus,
+      grade: history.grade,
       student: {
         id: history.student.id,
         user: {

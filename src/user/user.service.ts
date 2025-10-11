@@ -48,6 +48,7 @@ export class UserService {
       email: user.email,
       role: user.role,
       createdAt: user.createdAt,
+      gender: user.gender
     };
   }
 
@@ -60,6 +61,7 @@ export class UserService {
         fullName: true,
         email: true,
         role: true,
+        gender: true,
         createdAt: true,
       },
     });
@@ -75,6 +77,7 @@ export class UserService {
         fullName: true,
         email: true,
         role: true,
+        gender: true,
         createdAt: true,
       },
     });
@@ -104,6 +107,7 @@ export class UserService {
         fullName: true,
         email: true,
         role: true,
+        gender: true,
         createdAt: true,
       },
     });
@@ -119,4 +123,6 @@ export class UserService {
     await this.prismaService.user.delete({ where: { id } });
     return { message: `User ${id} deleted successfully` };
   }
+
+  async resetPass(){}
 }

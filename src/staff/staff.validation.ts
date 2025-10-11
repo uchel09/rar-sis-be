@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { StaffPosition } from 'generated/prisma';
+import { Gender, StaffPosition } from 'generated/prisma';
 
 export class StaffValidation {
   static readonly CREATE = z.object({
@@ -18,6 +18,7 @@ export class StaffValidation {
     nik: z.string().min(3, { message: 'NIK must be at least 3 characters' }),
     nip: z.string().optional(),
     dob: z.coerce.date(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }),
   });
 
   static readonly UPDATE = z.object({
@@ -41,5 +42,7 @@ export class StaffValidation {
     nik: z.string().min(3).optional(),
     nip: z.string().optional(),
     dob: z.coerce.date().optional(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }).optional(),
+    isActive: z.boolean().optional(),
   });
 }

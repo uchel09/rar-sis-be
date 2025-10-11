@@ -13,6 +13,7 @@ import {
   UpdateStudentRequest,
   StudentResponse,
 } from 'src/model/student.model';
+import { UtilService } from 'src/common/util.service';
 import { WebResponse } from 'src/model/web.model';
 
 @Controller('/api/students')
@@ -27,7 +28,12 @@ export class StudentController {
     if (request.classId === '') {
       request.classId = undefined;
     }
-    const result = await this.studentService.create(request);
+    const normalizedRequest = UtilService.normalizeOptionalEmptyStrings(
+      request,
+      ['enrollmentNumber', 'address', 'classId'],
+    );
+    console.log(request);
+    const result = await this.studentService.create(normalizedRequest);
     return {
       data: result,
     };
@@ -59,10 +65,14 @@ export class StudentController {
     @Param('id') id: string,
     @Body() data: UpdateStudentRequest,
   ): Promise<WebResponse<StudentResponse>> {
-    if (data.classId === '') {
-      data.classId = undefined;
-    }
-    const result = await this.studentService.update(id, data);
+    const normalizedRequest = UtilService.normalizeOptionalEmptyStrings2(
+      data,
+      ['enrollmentNumber', 'address', 'classId'],
+    );
+    console.log(id);
+    console.log('Update =------');
+    console.log(normalizedRequest);
+    const result = await this.studentService.update(id, normalizedRequest);
     return {
       data: result,
     };

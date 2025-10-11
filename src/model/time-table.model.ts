@@ -5,10 +5,12 @@ export interface CreateTimetableRequest {
   classId: string;
   subjectId: string;
   teacherId: string;
+  academicYearId: string;
   semester: Semester;
   dayOfWeek: DayOfWeek;
   startTime: string; // HH:mm
   endTime: string; // HH:mm
+  isActive: boolean
 }
 
 export interface UpdateTimetableRequest {
@@ -16,6 +18,7 @@ export interface UpdateTimetableRequest {
   dayOfWeek?: DayOfWeek;
   startTime?: string;
   endTime?: string;
+  isActive: boolean;
 }
 
 export interface TimetableResponse {
@@ -28,6 +31,7 @@ export interface TimetableResponse {
   dayOfWeek: DayOfWeek;
   startTime: Date;
   endTime: Date;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 

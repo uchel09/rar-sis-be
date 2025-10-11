@@ -49,6 +49,7 @@ export class StudentService {
           password: hashedPassword,
           fullName: createRequest.fullName,
           role: Role.STUDENT,
+          gender: createRequest.gender,
         },
       });
 
@@ -60,6 +61,7 @@ export class StudentService {
           enrollmentNumber: createRequest.enrollmentNumber || undefined,
           dob: createRequest.dob,
           address: createRequest.address,
+          isActive: true,
         },
         include: {
           user: true,
@@ -85,12 +87,14 @@ export class StudentService {
           id: user.id,
           fullName: user.fullName,
           email: user.email,
+          gender: user.gender,
         },
         parents: student.parents.map((p) => ({
           id: p.parent.id,
           fullName: p.parent.user.fullName,
           email: p.parent.user.email,
         })),
+        isActive: student.isActive,
         createdAt: student.createdAt,
         updatedAt: student.updatedAt,
       };
@@ -125,12 +129,14 @@ export class StudentService {
         id: s.user.id,
         fullName: s.user.fullName,
         email: s.user.email,
+        gender: s.user.gender,
       },
       parents: s.parents.map((p) => ({
         id: p.parent.id,
         fullName: p.parent.user.fullName,
         email: p.parent.user.email,
       })),
+      isActive: s.isActive,
       createdAt: s.createdAt,
       updatedAt: s.updatedAt,
     }));
@@ -167,12 +173,14 @@ export class StudentService {
         id: student.user.id,
         fullName: student.user.fullName,
         email: student.user.email,
+        gender: student.user.gender,
       },
       parents: student.parents.map((p) => ({
         id: p.parent.id,
         fullName: p.parent.user.fullName,
         email: p.parent.user.email,
       })),
+      isActive: student.isActive,
       createdAt: student.createdAt,
       updatedAt: student.updatedAt,
     };
@@ -209,6 +217,7 @@ export class StudentService {
       const userData: Prisma.UserUpdateInput = {};
       if (updateRequest.email) userData.email = updateRequest.email;
       if (updateRequest.fullName) userData.fullName = updateRequest.fullName;
+      if (updateRequest.gender) userData.gender = updateRequest.gender;
       if (updateRequest.password)
         userData.password = await bcrypt.hash(updateRequest.password, 10);
 
@@ -228,6 +237,7 @@ export class StudentService {
           enrollmentNumber: updateRequest.enrollmentNumber,
           dob: updateRequest.dob,
           address: updateRequest.address,
+          isActive: updateRequest.isActive,
         },
         include: {
           user: true,
@@ -253,12 +263,14 @@ export class StudentService {
           id: updatedUser.id,
           fullName: updatedUser.fullName,
           email: updatedUser.email,
+          gender: updatedUser.gender,
         },
         parents: updatedStudent.parents.map((p) => ({
           id: p.parent.id,
           fullName: p.parent.user.fullName,
           email: p.parent.user.email,
         })),
+        isActive: updatedStudent.isActive,
         createdAt: updatedStudent.createdAt,
         updatedAt: updatedStudent.updatedAt,
       };

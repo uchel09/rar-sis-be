@@ -1,4 +1,5 @@
 // src/validation/student.validation.ts
+import { Gender } from 'generated/prisma';
 import { z } from 'zod';
 
 export class StudentValidation {
@@ -11,14 +12,15 @@ export class StudentValidation {
       .string()
       .min(3, { message: 'Full name must be at least 3 characters' }),
     schoolId: z.uuid({ message: 'schoolId must be a valid UUID' }),
-    classId: z
-      .uuid({ message: 'classId must be a valid UUID' })
-      .optional(),
+    classId: z.uuid({ message: 'classId must be a valid UUID' }).optional(),
     enrollmentNumber: z
       .string()
-      .min(3, { message: 'Enrollment number must be at least 3 characters' }).optional(),
+      .min(3, { message: 'Enrollment number must be at least 3 characters' })
+      .optional(),
     dob: z.coerce.date(),
+    isActive: z.boolean(),
     address: z.string().optional(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }),
     parentIds: z.array(z.uuid()).optional(),
   });
 
@@ -32,15 +34,13 @@ export class StudentValidation {
       .string()
       .min(3, { message: 'Full name must be at least 3 characters' })
       .optional(),
-    schoolId: z
-      .uuid({ message: 'schoolId must be a valid UUID' })
-      .optional(),
-    classId: z
-      .uuid({ message: 'classId must be a valid UUID' })
-      .optional(),
+    schoolId: z.uuid({ message: 'schoolId must be a valid UUID' }).optional(),
+    classId: z.uuid({ message: 'classId must be a valid UUID' }).optional(),
     enrollmentNumber: z.string().min(3).optional(),
     dob: z.coerce.date().optional(),
+    isActive: z.boolean().optional(),
     address: z.string().optional(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }).optional(),
     parentIds: z.array(z.uuid()).optional(),
   });
 }

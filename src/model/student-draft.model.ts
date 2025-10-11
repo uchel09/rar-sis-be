@@ -1,4 +1,4 @@
-import { DraftStatus, DraftType, Grade } from 'generated/prisma';
+import { DraftStatus, DraftType, Gender, Grade } from 'generated/prisma';
 
 export interface CreateStudentDraftRequest {
   email: string;
@@ -6,9 +6,11 @@ export interface CreateStudentDraftRequest {
   schoolId: string;
   targetClassId?: string;
   academicYearId: string;
+  studentId?: string;
   enrollmentNumber?: string;
   dob: Date;
   address?: string;
+  gender: Gender;
   grade: Grade;
   createdBy?: string;
   verifiedBy?: string;
@@ -21,6 +23,8 @@ export interface CreateStudentDraftRequest {
     phone: string;
     address?: string;
     email: string;
+    nik: string;
+    gender: Gender;
   }[];
 
   draftType: DraftType;
@@ -35,6 +39,7 @@ export interface UpdateStudentDraftRequest {
   dob?: Date;
   address?: string;
   academicYearId?: string;
+  gender: Gender;
   grade?: Grade;
   createdBy?: string;
   verifiedBy?: string;
@@ -47,6 +52,8 @@ export interface UpdateStudentDraftRequest {
     phone?: string;
     address?: string;
     email?: string;
+    nik?: string;
+    gender?: Gender
   }[];
 
   draftType?: DraftType;
@@ -60,6 +67,7 @@ export interface StudentDraftResponse {
   schoolId: string;
   enrollmentNumber?: string;
   targetClassId?: string;
+  gender: Gender;
   academicYear: {
     id: string;
     name: string
@@ -84,6 +92,8 @@ export interface StudentDraftResponse {
     phone: string;
     address?: string;
     email: string;
+    nik: string;
+    gender: Gender;
   }[];
 
   draftType: DraftType;

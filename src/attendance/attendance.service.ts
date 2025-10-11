@@ -58,6 +58,7 @@ export class AttendanceService {
         semester: createRequest.semester,
         status: createRequest.status,
         note: createRequest.note || null,
+        academicYearId: createRequest.academicYearId
       },
     });
 
@@ -68,6 +69,7 @@ export class AttendanceService {
       schoolId: attendance.schoolId,
       timetableId: attendance.timetableId,
       teacherId: attendance.teacherId,
+      academicYearId: attendance.academicYearId,
       date: attendance.date.toISOString(),
       semester: attendance.semester,
       status: attendance.status,
@@ -98,6 +100,7 @@ export class AttendanceService {
       note: att.note || undefined,
       createdAt: att.createdAt.toISOString(),
       updatedAt: att.updatedAt.toISOString(),
+      academicYearId: att.academicYearId,
     }));
   }
 
@@ -121,6 +124,7 @@ export class AttendanceService {
       semester: att.semester,
       status: att.status,
       note: att.note || undefined,
+      academicYearId: att.academicYearId,
       createdAt: att.createdAt.toISOString(),
       updatedAt: att.updatedAt.toISOString(),
     };
@@ -160,6 +164,7 @@ export class AttendanceService {
       note: updated.note || undefined,
       createdAt: updated.createdAt.toISOString(),
       updatedAt: updated.updatedAt.toISOString(),
+      academicYearId: updated.academicYearId
     };
   }
 

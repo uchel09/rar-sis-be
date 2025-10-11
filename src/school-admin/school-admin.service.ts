@@ -59,6 +59,7 @@ export class SchoolAdminService {
           password: hashedPassword,
           fullName: createRequest.fullName,
           role: Role.SCHOOL_ADMIN,
+          gender: createRequest.gender
         },
       });
 
@@ -68,6 +69,7 @@ export class SchoolAdminService {
           userId: user.id,
           schoolId: createRequest.schoolId,
           dob: createRequest.dob,
+          nik: createRequest.nik
         },
         include: { user: true },
       });
@@ -79,10 +81,12 @@ export class SchoolAdminService {
       id: result.id,
       schoolId: result.schoolId,
       dob: result.dob,
+      nik: result.nik,
       user: {
         id: result.user.id,
         fullName: result.user.fullName,
         email: result.user.email,
+        gender: result.user.gender,
       },
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
@@ -101,10 +105,12 @@ export class SchoolAdminService {
       id: admin.id,
       schoolId: admin.schoolId,
       dob: admin.dob,
+      nik: admin.nik,
       user: {
         id: admin.user.id,
         fullName: admin.user.fullName,
         email: admin.user.email,
+        gender: admin.user.gender
       },
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,
@@ -126,10 +132,12 @@ export class SchoolAdminService {
       id: schoolAdmin.id,
       schoolId: schoolAdmin.schoolId,
       dob: schoolAdmin.dob,
+      nik: schoolAdmin.nik,
       user: {
         id: schoolAdmin.user.id,
         fullName: schoolAdmin.user.fullName,
         email: schoolAdmin.user.email,
+        gender: schoolAdmin.user.gender,
       },
       createdAt: schoolAdmin.createdAt,
       updatedAt: schoolAdmin.updatedAt,
@@ -174,11 +182,13 @@ export class SchoolAdminService {
       if (
         updateRequest.email ||
         updateRequest.fullName ||
-        updateRequest.password
+        updateRequest.password ||
+        updateRequest.gender
       ) {
         const userData: Prisma.UserUpdateInput = {};
         if (updateRequest.email) userData.email = updateRequest.email;
         if (updateRequest.fullName) userData.fullName = updateRequest.fullName;
+        if (updateRequest.gender) userData.gender = updateRequest.gender;
         if (updateRequest.password)
           userData.password = await bcrypt.hash(updateRequest.password, 10);
 
@@ -194,6 +204,7 @@ export class SchoolAdminService {
         data: {
           schoolId: updateRequest.schoolId,
           dob: updateRequest.dob,
+          nik: updateRequest.nik,
         },
         include: { user: true },
       });
@@ -203,10 +214,12 @@ export class SchoolAdminService {
       id: updatedAdmin.id,
       schoolId: updatedAdmin.schoolId,
       dob: updatedAdmin.dob,
+      nik: updatedAdmin.nik,
       user: {
         id: updatedAdmin.user.id,
         fullName: updatedAdmin.user.fullName,
         email: updatedAdmin.user.email,
+        gender: updatedAdmin.user.gender
       },
       createdAt: updatedAdmin.createdAt,
       updatedAt: updatedAdmin.updatedAt,

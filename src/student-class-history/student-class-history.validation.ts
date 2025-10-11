@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Semester } from 'generated/prisma';
+import { Grade, Semester, StudentStatus } from 'generated/prisma';
 
 export class StudentClassHistoryValidation {
   // ✅ CREATE
@@ -9,21 +9,35 @@ export class StudentClassHistoryValidation {
     academicYearId: z
       .string()
       .uuid({ message: 'academicYearId must be a valid UUID' }),
-    semester: z.nativeEnum(Semester, { message: 'Invalid semester value' }),
+    semester: z.enum(Semester, { message: 'Invalid semester value' }),
+    isRepeatedYear: z.boolean(),
+    remark: z.string(),
+    studentStatus: z.enum(StudentStatus, {
+      message: 'Invalid Student Status value',
+    }),
+    grade: z.enum(Grade, { message: 'Invalid Grade value' })
   });
 
   // ✅ UPDATE
   static readonly UPDATE = z.object({
-    classId: z
+    studentId: z
       .string()
-      .uuid({ message: 'classId must be a valid UUID' })
+      .uuid({ message: 'studentId must be a valid UUID' })
       .optional(),
+    classId: z.uuid({ message: 'classId must be a valid UUID' }).optional(),
     academicYearId: z
-      .string()
       .uuid({ message: 'academicYearId must be a valid UUID' })
       .optional(),
     semester: z
-      .nativeEnum(Semester, { message: 'Invalid semester value' })
+      .enum(Semester, { message: 'Invalid semester value' })
       .optional(),
+    isRepeatedYear: z.boolean().optional(),
+    remark: z.string().optional(),
+    studentStatus: z
+      .enum(StudentStatus, {
+        message: 'Invalid Student Status value',
+      })
+      .optional(),
+    grade: z.enum(Grade, { message: 'Invalid Grade value' }).optional(),
   });
 }

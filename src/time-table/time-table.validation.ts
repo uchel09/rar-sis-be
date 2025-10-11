@@ -22,16 +22,13 @@ export class TimetableValidation {
       teacherId: z.uuid({ message: 'teacherId harus UUID' }),
       semester: z.enum(Semester, { message: 'semester tidak valid' }),
       dayOfWeek: z.enum(DayOfWeek, { message: 'dayOfWeek tidak valid' }),
-      startTime: z
-        .string()
-        .regex(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
-          message: 'format startTime harus HH:mm',
-        }),
-      endTime: z
-        .string()
-        .regex(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
-          message: 'format endTime harus HH:mm',
-        }),
+      startTime: z.string().regex(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
+        message: 'format startTime harus HH:mm',
+      }),
+      endTime: z.string().regex(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
+        message: 'format endTime harus HH:mm',
+      }),
+      isActive: z.boolean(),
     })
     .refine((data) => isEndTimeAfterStart(data.startTime, data.endTime), {
       message: 'endTime harus lebih besar dari startTime',
@@ -40,9 +37,7 @@ export class TimetableValidation {
 
   static readonly UPDATE = z
     .object({
-      teacherId: z
-        .uuid({ message: 'teacherId harus UUID' })
-        .optional(),
+      teacherId: z.uuid({ message: 'teacherId harus UUID' }).optional(),
       dayOfWeek: z
         .enum(DayOfWeek, { message: 'dayOfWeek tidak valid' })
         .optional(),
@@ -58,6 +53,7 @@ export class TimetableValidation {
           message: 'format endTime harus HH:mm',
         })
         .optional(),
+      isActive: z.boolean().optional(),
     })
     .refine(
       (data) =>

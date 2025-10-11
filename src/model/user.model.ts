@@ -1,10 +1,11 @@
-import { Role } from 'generated/prisma';
+import { Gender, Role } from 'generated/prisma';
 
 export class RegisterUserRequest {
   email: string;
   password: string;
   fullName: string;
   role: Role;
+  gender: Gender;
 }
 
 export class RegisterUserResponse {
@@ -12,6 +13,7 @@ export class RegisterUserResponse {
   email: string;
   fullName: string;
   role: Role;
+  gender: Gender;
   createdAt: Date;
 }
 
@@ -20,4 +22,5 @@ export class UpdateUserRequest {
   password: string;
   fullName: string;
   role: Role;
+  gender: Gender;
 }

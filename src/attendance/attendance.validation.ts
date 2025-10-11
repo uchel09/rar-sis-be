@@ -13,6 +13,7 @@ export class AttendanceValidation {
     semester: z.enum(Semester, 'Semester harus valid'),
     status: z.enum(AttendanceStatus, 'Status harus valid'),
     note: z.string().optional(),
+    academicYearId: z.uuid('Academic Year ID harus valid UUID'),
   });
 
   // Validasi UPDATE Attendance

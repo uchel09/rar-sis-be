@@ -57,6 +57,7 @@ export class StaffService {
           password: hashedPassword,
           fullName: createRequest.fullName,
           role: Role.STAFF,
+          gender: createRequest.gender,
         },
       });
 
@@ -69,6 +70,7 @@ export class StaffService {
           nik: createRequest.nik,
           nip: createRequest.nip,
           dob: createRequest.dob,
+          isActive: true,
         },
         include: { user: true },
       });
@@ -81,10 +83,12 @@ export class StaffService {
         nik: staff.nik,
         nip: staff.nip || undefined,
         dob: staff.dob,
+        isActive: staff.isActive,
         user: {
           id: staff.user.id,
           fullName: staff.user.fullName,
           email: staff.user.email,
+          gender: staff.user.gender,
         },
         createdAt: staff.createdAt,
         updatedAt: staff.updatedAt,
@@ -95,6 +99,7 @@ export class StaffService {
   // ✅ READ ALL
   async findAll(): Promise<StaffResponse[]> {
     const staffs = await this.prismaService.staff.findMany({
+      where: { isActive: true },
       include: { user: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -111,7 +116,9 @@ export class StaffService {
         id: staff.user.id,
         fullName: staff.user.fullName,
         email: staff.user.email,
+        gender: staff.user.gender,
       },
+      isActive: staff.isActive,
       createdAt: staff.createdAt,
       updatedAt: staff.updatedAt,
     }));
@@ -137,7 +144,10 @@ export class StaffService {
         id: staff.user.id,
         fullName: staff.user.fullName,
         email: staff.user.email,
+
+        gender: staff.user.gender,
       },
+      isActive: staff.isActive,
       createdAt: staff.createdAt,
       updatedAt: staff.updatedAt,
     };
@@ -177,11 +187,14 @@ export class StaffService {
     if (
       updateRequest.email ||
       updateRequest.fullName ||
-      updateRequest.password
+      updateRequest.password ||
+      updateRequest.gender
     ) {
       const userData: Prisma.UserUpdateInput = {};
       if (updateRequest.email) userData.email = updateRequest.email;
       if (updateRequest.fullName) userData.fullName = updateRequest.fullName;
+      if (updateRequest.fullName) userData.fullName = updateRequest.fullName;
+      if (updateRequest.gender) userData.gender = updateRequest.gender;
       if (updateRequest.password)
         userData.password = await bcrypt.hash(updateRequest.password, 10);
 
@@ -201,6 +214,7 @@ export class StaffService {
         nik: updateRequest.nik,
         nip: updateRequest.nip,
         dob: updateRequest.dob,
+        isActive: updateRequest.isActive,
       },
       include: { user: true },
     });
@@ -213,10 +227,12 @@ export class StaffService {
       nik: updatedStaff.nik,
       nip: updatedStaff.nip || undefined,
       dob: updatedStaff.dob,
+      isActive: updatedStaff.isActive,
       user: {
         id: updatedStaff.user.id,
         fullName: updatedStaff.user.fullName,
         email: updatedStaff.user.email,
+        gender: updatedStaff.user.gender
       },
       createdAt: updatedStaff.createdAt,
       updatedAt: updatedStaff.updatedAt,

@@ -1,9 +1,13 @@
+import { Gender } from "generated/prisma";
+
 export interface CreateSchoolAdminRequest {
   email: string;
   password: string;
   fullName: string;
   schoolId: string;
   dob: Date;
+  nik: string;
+  gender: Gender;
 }
 
 export interface UpdateSchoolAdminRequest {
@@ -12,13 +16,17 @@ export interface UpdateSchoolAdminRequest {
   email?: string;
   password?: string;
   schoolId?: string;
+  nik?: string;
+  gender: Gender;
 }
 
 export interface SchoolAdminResponse {
   id: string;
   schoolId: string;
   dob: Date;
+  nik: string;
   user: {
+    gender: Gender;
     id: string;
     fullName: string;
     email: string;

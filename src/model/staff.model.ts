@@ -1,4 +1,4 @@
-import { StaffPosition } from 'generated/prisma';
+import { Gender, StaffPosition } from 'generated/prisma';
 export interface CreateStaffRequest {
   email: string; // dari User
   password: string; // dari User
@@ -8,6 +8,7 @@ export interface CreateStaffRequest {
   phone: string;
   nik: string;
   nip?: string;
+  gender: Gender;
   dob: Date | string;
 }
 
@@ -21,6 +22,8 @@ export interface UpdateStaffRequest {
   nik?: string;
   nip?: string;
   dob?: Date | string;
+  gender: Gender;
+  isActive?: boolean;
 }
 
 // RESPONSE
@@ -32,10 +35,12 @@ export interface StaffResponse {
   nik: string;
   nip?: string;
   dob: Date;
+  isActive: boolean;
   user: {
     id: string;
     fullName: string;
     email: string;
+    gender: Gender;
   };
   createdAt: Date;
   updatedAt: Date;

@@ -1,3 +1,4 @@
+import { Gender } from 'generated/prisma';
 import { z } from 'zod';
 
 export class ParentValidation {
@@ -8,6 +9,8 @@ export class ParentValidation {
     phone: z.string(),
     address: z.string().optional(),
     dob: z.coerce.date(),
+    nik: z.string(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }),
     studentIds: z.array(z.uuid()).optional(),
   });
 
@@ -18,6 +21,8 @@ export class ParentValidation {
     phone: z.string().optional(),
     address: z.string().optional(),
     dob: z.coerce.date().optional(),
+    nik: z.string().optional(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }).optional(),
     studentIds: z.array(z.uuid()).optional(),
   });
 }

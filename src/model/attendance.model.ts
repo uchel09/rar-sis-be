@@ -4,12 +4,13 @@ export interface CreateAttendanceRequest {
   studentId: string;
   subjectId: string;
   schoolId: string;
+  timetableId: string;
+  teacherId: string;
+  academicYearId: string;
   semester: Semester;
   date: Date;
   status: AttendanceStatus;
   note?: string;
-  timetableId: string;
-  teacherId: string;
 }
 
 export interface UpdateAttendanceRequest {
@@ -17,6 +18,7 @@ export interface UpdateAttendanceRequest {
   note?: string;
   timetableId?: string;
   teacherId?: string;
+  academicYearId: string;
 }
 
 export interface AttendanceResponse {
@@ -32,6 +34,7 @@ export interface AttendanceResponse {
   teacherId: string;
   createdAt: string;
   updatedAt: string;
+  academicYearId: string;
 }
 
 export interface BulkAttendanceRequest {

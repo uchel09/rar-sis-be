@@ -38,7 +38,15 @@ export class ParentService {
     const existEmail = await this.prismaService.user.count({
       where: { email: createRequest.email },
     });
+
+    const existNik = await this.prismaService.user.count({
+      where: { parent: { nik: createRequest.nik } },
+    });
     if (existEmail !== 0) throw new HttpException('Email already exists', 400);
+    if (existNik !== 0) {
+      const parent = await this.findByNik(createRequest.nik);
+      return parent;
+    }
 
     const hashedPassword = await bcrypt.hash(createRequest.password, 10);
 
@@ -49,6 +57,7 @@ export class ParentService {
           password: hashedPassword,
           fullName: createRequest.fullName,
           role: Role.PARENT,
+          gender: createRequest.gender,
         },
       });
 
@@ -58,6 +67,7 @@ export class ParentService {
           dob: createRequest.dob,
           phone: createRequest.phone,
           address: createRequest.address,
+          nik: createRequest.nik,
         },
       });
 
@@ -66,7 +76,9 @@ export class ParentService {
         dob: parent.dob,
         phone: parent.phone || undefined,
         address: parent.address || undefined,
+        nik: parent.nik,
         user: {
+          gender: user.gender,
           id: user.id,
           fullName: user.fullName,
           email: user.email,
@@ -101,7 +113,9 @@ export class ParentService {
       dob: p.dob,
       phone: p.phone || undefined,
       address: p.address || undefined,
+      nik: p.nik,
       user: {
+        gender: p.user.gender,
         id: p.user.id,
         fullName: p.user.fullName,
         email: p.user.email,
@@ -140,7 +154,49 @@ export class ParentService {
       dob: parent.dob,
       phone: parent.phone || undefined,
       address: parent.address || undefined,
+      nik: parent.nik,
       user: {
+        id: parent.user.id,
+        fullName: parent.user.fullName,
+        email: parent.user.email,
+        gender: parent.user.gender,
+      },
+      students: parent.students.map((s) => ({
+        id: s.student.id,
+        fullName: s.student.user.fullName, // ambil dari student.user
+      })),
+      createdAt: parent.createdAt,
+      updatedAt: parent.updatedAt,
+    };
+  }
+
+  async findByNik(nik: string): Promise<ParentResponse> {
+    const parent = await this.prismaService.parent.findUnique({
+      where: { nik: nik },
+      include: {
+        user: true,
+        students: {
+          include: {
+            student: {
+              include: {
+                user: true, // pastikan ada user supaya fullName bisa diambil
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!parent) throw new NotFoundException(`Parent with id ${nik} not found`);
+
+    return {
+      id: parent.id,
+      dob: parent.dob,
+      phone: parent.phone || undefined,
+      address: parent.address || undefined,
+      nik: parent.nik,
+      user: {
+        gender: parent.user.gender,
         id: parent.user.id,
         fullName: parent.user.fullName,
         email: parent.user.email,
@@ -153,7 +209,6 @@ export class ParentService {
       updatedAt: parent.updatedAt,
     };
   }
-
   // ✅ UPDATE Parent
   async update(id: string, data: UpdateParentRequest): Promise<ParentResponse> {
     const parent = await this.prismaService.parent.findUnique({
@@ -192,6 +247,7 @@ export class ParentService {
       const userData: Prisma.UserUpdateInput = {};
       if (updateRequest.email) userData.email = updateRequest.email;
       if (updateRequest.fullName) userData.fullName = updateRequest.fullName;
+      if (updateRequest.gender) userData.fullName = updateRequest.gender;
       if (updateRequest.password)
         userData.password = await bcrypt.hash(updateRequest.password, 10);
 
@@ -206,6 +262,7 @@ export class ParentService {
           dob: updateRequest.dob,
           phone: updateRequest.phone,
           address: updateRequest.address,
+          nik: updateRequest.nik,
         },
         include: {
           students: {
@@ -221,10 +278,12 @@ export class ParentService {
         dob: updatedParent.dob,
         phone: updatedParent.phone || undefined,
         address: updatedParent.address || undefined,
+        nik: updatedParent.nik,
         user: {
           id: updatedUser.id,
           fullName: updatedUser.fullName,
           email: updatedUser.email,
+          gender: updatedUser.gender,
         },
         students: updatedParent.students.map((s) => ({
           id: s.student.id,

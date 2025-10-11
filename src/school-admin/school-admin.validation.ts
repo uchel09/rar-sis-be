@@ -1,3 +1,4 @@
+import { Gender } from 'generated/prisma';
 import { z } from 'zod';
 
 export class SchoolAdminValidation {
@@ -11,6 +12,8 @@ export class SchoolAdminValidation {
       .min(3, { message: 'Full name must be at least 3 characters' }),
     schoolId: z.string().uuid({ message: 'schoolId must be a valid UUID' }),
     dob: z.coerce.date(), // otomatis parse string jadi Date
+    nik: z.string(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }),
   });
 
   static readonly UPDATE = z.object({
@@ -28,5 +31,7 @@ export class SchoolAdminValidation {
       .uuid({ message: 'schoolId must be a valid UUID' })
       .optional(),
     dob: z.coerce.date().optional(),
+    nik: z.string().optional(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }).optional(),
   });
 }

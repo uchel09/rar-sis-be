@@ -18,9 +18,7 @@ import { UtilService } from 'src/common/util.service';
 
 @Controller('/api/student-drafts')
 export class StudentDraftController {
-  constructor(
-    private readonly studentDraftService: StudentDraftService,
-  ) {}
+  constructor(private readonly studentDraftService: StudentDraftService) {}
 
   // ✅ CREATE
   @Post()
@@ -39,6 +37,7 @@ export class StudentDraftController {
         'verifiedAt',
       ],
     );
+    console.log(normalizedRequest);
     const result = await this.studentDraftService.create(normalizedRequest);
     return {
       data: result,
@@ -49,6 +48,22 @@ export class StudentDraftController {
   @Get()
   async findAll(): Promise<WebResponse<StudentDraftResponse[]>> {
     const result = await this.studentDraftService.findAll();
+    return {
+      data: result,
+    };
+  }
+  // ✅ READ ALL
+  @Get("/approve-pending")
+  async findAllApprovedPending(): Promise<WebResponse<StudentDraftResponse[]>> {
+    const result = await this.studentDraftService.findAllApprovedPending();
+    return {
+      data: result,
+    };
+  }
+  // ✅ READ ALL
+  @Get("/approved")
+  async findAllApproved(): Promise<WebResponse<StudentDraftResponse[]>> {
+    const result = await this.studentDraftService.findAllApproved();
     return {
       data: result,
     };
@@ -71,6 +86,7 @@ export class StudentDraftController {
     @Param('id') id: string,
     @Body() request: UpdateStudentDraftRequest,
   ): Promise<WebResponse<StudentDraftResponse>> {
+    console.log(request);
     const result = await this.studentDraftService.update(id, request);
     return {
       data: result,
@@ -84,11 +100,11 @@ export class StudentDraftController {
   }
 
   // ✅ APPROVE
-  @Put(':id/approve')
-  async approve(
+  @Put(':id/approve-pending')
+  async approvePending(
     @Param('id') id: string,
   ): Promise<WebResponse<StudentDraftResponse>> {
-    const result = await this.studentDraftService.approve(id);
+    const result = await this.studentDraftService.approvePending(id);
     return {
       data: result,
     };

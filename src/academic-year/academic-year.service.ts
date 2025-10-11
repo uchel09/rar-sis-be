@@ -76,6 +76,19 @@ export class AcademicYearService {
 
     return ay;
   }
+  async findByIsActive(): Promise<AcademicYear> {
+    this.logger.info('Find active academic year');
+
+    const ay = await this.prismaService.academicYear.findFirst({
+      where: { isActive: true },
+    });
+
+    if (!ay) {
+      throw new NotFoundException('No active academic year found');
+    }
+
+    return ay;
+  }
 
   // ✅ UPDATE
   async update(
@@ -97,7 +110,6 @@ export class AcademicYearService {
       where: { id },
       data: updateRequest,
     });
-   
 
     return updated;
   }

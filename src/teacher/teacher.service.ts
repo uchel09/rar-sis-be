@@ -65,6 +65,7 @@ export class TeacherService {
           password: hashedPassword,
           fullName: createRequest.fullName,
           role: Role.TEACHER,
+          gender: createRequest.gender
         },
       });
 
@@ -78,6 +79,7 @@ export class TeacherService {
           hireDate: createRequest.hireDate,
           dob: createRequest.dob,
           phone: createRequest.phone,
+          isActive: true,
           subjectClassTeacher: createRequest.subjectClassTeacher
             ? {
                 create: createRequest.subjectClassTeacher.map((st) => ({
@@ -97,14 +99,15 @@ export class TeacherService {
       id: teacher.id,
       nik: teacher.nik,
       nip: teacher.nip || undefined,
-      schoolId: teacher.schoolId,
       dob: teacher.dob,
       hireDate: teacher.hireDate,
       phone: teacher.phone,
+      isActive: teacher.isActive,
       user: {
         id: teacher.user.id,
         fullName: teacher.user.fullName,
         email: teacher.user.email,
+        gender: teacher.user.gender,
       },
       subjectClassTeacher: (
         teacher.subjectClassTeacher as {
@@ -139,10 +142,13 @@ export class TeacherService {
       schoolId: teacher.schoolId,
       dob: teacher.dob,
       phone: teacher.phone,
+      hireDate: teacher.hireDate,
+      isActive: teacher.isActive,
       user: {
         id: teacher.user.id,
         fullName: teacher.user.fullName,
         email: teacher.user.email,
+        gender: teacher.user.gender
       },
       subjectClassTeacher: (
         teacher.subjectClassTeacher as {
@@ -177,13 +183,15 @@ export class TeacherService {
       id: teacher.id,
       nik: teacher.nik,
       nip: teacher.nip || undefined,
-      schoolId: teacher.schoolId,
       dob: teacher.dob,
       phone: teacher.phone,
+      hireDate: teacher.hireDate,
+      isActive: teacher.isActive,
       user: {
         id: teacher.user.id,
         fullName: teacher.user.fullName,
         email: teacher.user.email,
+        gender: teacher.user.gender
       },
       subjectClassTeacher: (
         teacher.subjectClassTeacher as {
@@ -253,12 +261,15 @@ export class TeacherService {
         if (
           updateRequest.email ||
           updateRequest.fullName ||
-          updateRequest.password
+          updateRequest.password ||
+          updateRequest.gender
         ) {
           const userData: Prisma.UserUpdateInput = {};
           if (updateRequest.email) userData.email = updateRequest.email;
           if (updateRequest.fullName)
             userData.fullName = updateRequest.fullName;
+          if (updateRequest.gender) 
+            userData.gender = updateRequest.gender;
           if (updateRequest.password)
             userData.password = await bcrypt.hash(updateRequest.password, 10);
 
@@ -272,12 +283,12 @@ export class TeacherService {
         return prisma.teacher.update({
           where: { id },
           data: {
-            schoolId: updateRequest.schoolId,
             nik: updateRequest.nik,
             nip: updateRequest.nip,
             hireDate: updateRequest.hireDate,
             dob: updateRequest.dob,
             phone: updateRequest.phone,
+            isActive: updateRequest.isActive,
             subjectClassTeacher: updateRequest.subjectClassTeacher
               ? {
                   create: updateRequest.subjectClassTeacher.map((st) => ({
@@ -296,13 +307,15 @@ export class TeacherService {
       id: updatedTeacher.id,
       nik: updatedTeacher.nik,
       nip: updatedTeacher.nip || undefined,
-      schoolId: updatedTeacher.schoolId,
       dob: updatedTeacher.dob,
       phone: updatedTeacher.phone,
+      hireDate: updatedTeacher.hireDate,
+      isActive: updatedTeacher.isActive,
       user: {
         id: updatedTeacher.user.id,
         fullName: updatedTeacher.user.fullName,
         email: updatedTeacher.user.email,
+        gender: updatedTeacher.user.gender
       },
       subjectClassTeacher: (
         updatedTeacher.subjectClassTeacher as {

@@ -1,3 +1,5 @@
+import { Gender } from 'generated/prisma';
+
 export interface CreateTeacherRequest {
   email: string;
   password: string;
@@ -8,6 +10,7 @@ export interface CreateTeacherRequest {
   hireDate: Date;
   dob: Date;
   phone: string;
+  gender: Gender;
   subjectClassTeacher?: { classId: string; subjectId: string }[];
 }
 
@@ -17,11 +20,12 @@ export interface UpdateTeacherRequest {
   dob?: Date;
   email?: string; // Bisa update email
   password?: string; // Bisa update password
-  schoolId?: string; // Pindah sekolah
   nik?: string;
   nip?: string;
   hireDate?: Date;
   phone: string;
+  gender: Gender;
+  isActive: boolean;
   subjectClassTeacher?: { classId: string; subjectId: string }[];
 }
 
@@ -30,11 +34,12 @@ export interface TeacherResponse {
   id: string; // ID teacher
   nik: string;
   nip?: string;
-  schoolId: string;
   dob: Date;
-  hireDate?: Date;
+  hireDate: Date;
   phone: string;
+  isActive: boolean;
   user: {
+    gender: Gender;
     id: string;
     fullName: string;
     email: string;

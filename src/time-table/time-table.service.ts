@@ -40,7 +40,7 @@ export class TimeTableService {
     if (conflict) {
       throw new HttpException('Timetable already exists at this time', 400);
     }
-
+    createRequest.isActive = true
     const timetable = await this.prismaService.timetable.create({
       data: createRequest,
       select: {
@@ -55,6 +55,7 @@ export class TimeTableService {
         endTime: true,
         createdAt: true,
         updatedAt: true,
+        isActive: true,
         class: { select: { id: true, name: true } },
         subject: { select: { id: true, name: true } },
         teacher: {
@@ -80,6 +81,7 @@ export class TimeTableService {
       updatedAt: timetable.updatedAt,
       class: timetable.class,
       subject: timetable.subject,
+      isActive: timetable.isActive,
       teacher: {
         id: timetable.teacher.id,
         fullName: timetable.teacher.user.fullName,
@@ -105,6 +107,7 @@ export class TimeTableService {
         endTime: true,
         createdAt: true,
         updatedAt: true,
+        isActive: true,
         class: { select: { id: true, name: true } },
         subject: { select: { id: true, name: true } },
         teacher: {
@@ -128,6 +131,7 @@ export class TimeTableService {
       endTime: tt.endTime,
       createdAt: tt.createdAt,
       updatedAt: tt.updatedAt,
+      isActive: tt.isActive,
       class: tt.class,
       subject: tt.subject,
       teacher: {
@@ -153,6 +157,7 @@ export class TimeTableService {
         dayOfWeek: true,
         startTime: true,
         endTime: true,
+        isActive: true,
         createdAt: true,
         updatedAt: true,
         class: { select: { id: true, name: true } },
@@ -180,6 +185,7 @@ export class TimeTableService {
       dayOfWeek: timetable.dayOfWeek,
       startTime: timetable.startTime,
       endTime: timetable.endTime,
+      isActive: timetable.isActive,
       createdAt: timetable.createdAt,
       updatedAt: timetable.updatedAt,
       class: timetable.class,
@@ -223,6 +229,7 @@ export class TimeTableService {
         endTime: true,
         createdAt: true,
         updatedAt: true,
+        isActive: true,
         class: { select: { id: true, name: true } },
         subject: { select: { id: true, name: true } },
         teacher: {
@@ -244,6 +251,7 @@ export class TimeTableService {
       dayOfWeek: timetable.dayOfWeek,
       startTime: timetable.startTime,
       endTime: timetable.endTime,
+      isActive: timetable.isActive,
       createdAt: timetable.createdAt,
       updatedAt: timetable.updatedAt,
       class: timetable.class,

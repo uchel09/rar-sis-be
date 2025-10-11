@@ -1,4 +1,4 @@
-import { DraftStatus, DraftType, Grade } from 'generated/prisma';
+import { DraftStatus, DraftType, Gender, Grade } from 'generated/prisma';
 import { z } from 'zod';
 
 export class StudentDraftValidation {
@@ -10,6 +10,8 @@ export class StudentDraftValidation {
     phone: z.string().min(10, { message: 'Phone number too short' }),
     address: z.string().optional(),
     email: z.email({ message: 'Invalid email address' }),
+    nik: z.string(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }),
   });
 
   static readonly CREATE = z.object({
@@ -28,6 +30,7 @@ export class StudentDraftValidation {
     dob: z.coerce.date(),
     address: z.string().optional(),
     grade: z.enum(Grade),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }),
 
     parents: z.array(StudentDraftValidation.PARENT),
 
@@ -50,6 +53,7 @@ export class StudentDraftValidation {
     dob: z.coerce.date().optional(),
     address: z.string().optional(),
     grade: z.enum(Grade).optional(),
+    gender: z.enum(Gender, { message: 'Invalid Gender value' }).optional(),
     parents: z.array(StudentDraftValidation.PARENT).optional(),
     draftType: z.enum(DraftType).optional(),
     status: z.enum(DraftStatus).optional(),

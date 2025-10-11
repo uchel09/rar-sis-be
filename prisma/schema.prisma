@@ -7,6 +7,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 // generator erd {
 //   provider = "prisma-erd-generator"
 //   output   = "./erd.svg"   // hasilnya file gambar (svg/png)
@@ -26,8 +27,8 @@ enum AttendanceStatus {
   ABSENT
   SICK
   PERMISSION
-  LATE // siswa terlambat
-  EXCUSED // izin resmi (beda dengan permission biasa)
+  LATE
+  EXCUSED
 }
 
 enum Semester {
@@ -39,15 +40,17 @@ enum Semester {
 
 enum DraftStatus {
   PENDING
+  APPROVED_PENDING
   APPROVED
   REJECTED
 }
 
 enum DraftType {
-  NEW_ENROLLMENT // siswa baru masuk
-  TRANSFER_IN // pindahan masuk
-  TRANSFER_OUT // pindahan keluar
-  GRADUATED // sudah lulus
+  NEW_ENROLLMENT
+  TRANSFER_UP
+  TRANSFER_IN
+  TRANSFER_OUT
+  GRADUATED
 }
 
 enum StaffPosition {
@@ -62,6 +65,7 @@ enum StaffPosition {
   OTHER
 }
 
+// untuk time table 
 enum DayOfWeek {
   MONDAY
   TUESDAY
@@ -70,6 +74,18 @@ enum DayOfWeek {
   FRIDAY
   SATURDAY
   SUNDAY
+}
+
+// untuk student class history
+enum StudentStatus {
+  ACTIVE
+  GRADUATED
+  TRANSFERRED
+}
+
+enum Gender {
+  MALE
+  FEMALE
 }
 
 enum Grade {
@@ -97,6 +113,7 @@ model User {
   email     String   @unique
   password  String
   fullName  String
+  gender    Gender
   role      Role
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -149,6 +166,7 @@ model SchoolAdmin {
   userId    String
   schoolId  String
   dob       DateTime
+  nik       String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -166,6 +184,7 @@ model Student {
   enrollmentNumber String?  @unique
   dob              DateTime
   address          String?
+  isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -191,13 +210,14 @@ model StudentDraft {
   dob              DateTime
   address          String?
   parents          Json
+  gender           Gender
   grade            Grade
   draftType        DraftType
   status           DraftStatus @default(PENDING)
-  createdBy        String? // userId yang input
-  verifiedBy       String? // userId staff yang memverifikasi
+  createdBy        String?
+  verifiedBy       String?
   verifiedAt       DateTime?
-  rejectionReason  String? //untuk new student
+  rejectionReason  String?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
@@ -213,6 +233,8 @@ model Parent {
   phone     String
   address   String?
   dob       DateTime
+  nik       String   @unique
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -242,6 +264,7 @@ model Teacher {
   phone     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isActive  Boolean
 
   user        User         @relation(fields: [userId], references: [id])
   school      School       @relation(fields: [schoolId], references: [id])
@@ -265,6 +288,7 @@ model Staff {
   dob       DateTime
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
+  isActive  Boolean
 
   user   User   @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
@@ -273,18 +297,17 @@ model Staff {
 model Class {
   id                String   @id @default(uuid())
   schoolId          String
-  homeroomTeacherId String? // Wali kelas
+  homeroomTeacherId String?
   name              String
   academicYearId    String
-  grade             Grade // kelas berapa
+  grade             Grade
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   school                School                @relation(fields: [schoolId], references: [id])
   students              Student[]
-  studentClassHistories StudentClassHistory[] // gunakan camelCase
-
-  timetables Timetable[]
+  studentClassHistories StudentClassHistory[]
+  timetables            Timetable[]
 
   subjectClassTeacher SubjectClassTeacher[]
 
@@ -294,11 +317,15 @@ model Class {
 }
 
 model StudentClassHistory {
-  id             String   @id @default(uuid())
+  id             String        @id @default(uuid())
   studentId      String
   classId        String
   academicYearId String
   semester       Semester
+  isRepeatedYear Boolean       @default(false)
+  studentStatus  StudentStatus @default(ACTIVE)
+  remark         String
+  grade          Grade
 
   student      Student      @relation(fields: [studentId], references: [id])
   class        Class        @relation(fields: [classId], references: [id])
@@ -322,46 +349,51 @@ model Subject {
 }
 
 model Attendance {
-  id          String           @id @default(uuid())
-  studentId   String
-  subjectId   String
-  timetableId String
-  teacherId   String
-  schoolId    String
-  date        DateTime
-  semester    Semester
-  status      AttendanceStatus
-  note        String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id             String           @id @default(uuid())
+  studentId      String
+  subjectId      String
+  timetableId    String
+  teacherId      String
+  schoolId       String
+  date           DateTime
+  semester       Semester
+  status         AttendanceStatus
+  note           String?
+  academicYearId String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
-  student   Student   @relation(fields: [studentId], references: [id])
-  subject   Subject   @relation(fields: [subjectId], references: [id])
-  teacher   Teacher   @relation(fields: [teacherId], references: [id])
-  school    School    @relation(fields: [schoolId], references: [id])
-  timetable Timetable @relation(fields: [timetableId], references: [id])
+  student      Student      @relation(fields: [studentId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+  school       School       @relation(fields: [schoolId], references: [id])
+  timetable    Timetable    @relation(fields: [timetableId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
 
   @@unique([studentId, timetableId, date])
 }
 
 model Timetable {
-  id        String    @id @default(uuid())
-  schoolId  String
-  classId   String
-  subjectId String
-  teacherId String
-  semester  Semester
-  dayOfWeek DayOfWeek
-  startTime DateTime
-  endTime   DateTime
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  schoolId       String
+  classId        String
+  subjectId      String
+  teacherId      String
+  semester       Semester
+  dayOfWeek      DayOfWeek
+  startTime      DateTime
+  endTime        DateTime
+  academicYearId String
+  isActive       Boolean
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  school      School       @relation(fields: [schoolId], references: [id])
-  class       Class        @relation(fields: [classId], references: [id])
-  subject     Subject      @relation(fields: [subjectId], references: [id])
-  teacher     Teacher      @relation(fields: [teacherId], references: [id])
-  attendances Attendance[]
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  school       School       @relation(fields: [schoolId], references: [id])
+  class        Class        @relation(fields: [classId], references: [id])
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+  attendances  Attendance[]
 }
 
 model SubjectClassTeacher {
@@ -378,18 +410,20 @@ model SubjectClassTeacher {
 }
 
 model AcademicYear {
-  id        String   @id @default(uuid())
-  name      String   @unique // "2024/2025"
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  classes       Class[]
-  studentDrafts StudentDraft[]
-
+  id                    String                @id @default(uuid())
+  name                  String                @unique
+  startDate             DateTime
+  endDate               DateTime
+  isActive              Boolean               @default(false)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  classes               Class[]
+  studentDrafts         StudentDraft[]
   studentClassHistories StudentClassHistory[]
+
+  timetable Timetable[]
+
+  attendance Attendance[]
 }
 
 // =================================== Gambaran Fitur Lanjutan ====================================
@@ -410,7 +444,6 @@ model AcademicYear {
 
 //   @@unique([userId, date]) // 1 user hanya boleh absen sekali per hari
 // }
-
 
 // model Assessment {
 //   id          String   @id @default(uuid())
@@ -463,11 +496,11 @@ model AcademicYear {
 //   teacherId      String
 //   academicYearId String
 //   semester       Semester
-//   title          String      // misal: "UTS Matematika Semester 1"
+//   title          String      
 //   description    String?
 //   startTime      DateTime
 //   endTime        DateTime
-//   duration       Int         // menit
+//   duration       Int        
 //   createdAt      DateTime @default(now())
 //   updatedAt      DateTime @updatedAt
 
@@ -484,9 +517,9 @@ model AcademicYear {
 //   id        String   @id @default(uuid())
 //   examId    String
 //   question  String
-//   options   Json       // simpan pilihan jawaban dalam JSON
-//   answerKey String     // jawaban benar
-//   score     Float      // bobot soal
+//   options   Json      
+//   answerKey String     
+//   score     Float
 
 //   exam Exam @relation(fields: [examId], references: [id])
 //   answers ExamAnswer[]

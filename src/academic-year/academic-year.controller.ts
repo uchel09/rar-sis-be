@@ -40,6 +40,15 @@ export class AcademicYearController {
     };
   }
 
+  // ✅ READ BY ACTIVE
+  @Get('/active')
+  async findByIsActive(): Promise<WebResponse<AcademicYear>> {
+    const result = await this.classService.findByIsActive();
+    return {
+      data: result,
+    };
+  }
+
   // ✅ READ BY ID
   @Get(':id')
   async findById(@Param('id') id: string): Promise<WebResponse<AcademicYear>> {
@@ -48,7 +57,6 @@ export class AcademicYearController {
       data: result,
     };
   }
-
   // ✅ UPDATE
   @Put(':id')
   async update(
