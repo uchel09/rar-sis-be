@@ -7,7 +7,6 @@ export interface CreateClassRequest {
   name: string;
   academicYearId: string;
   grade: Grade;
-  subjectClassTeacher?: { teacherId: string; subjectId: string }[]; // relasi wajib untuk create
 }
 
 // Request untuk UPDATE Class
@@ -17,7 +16,6 @@ export interface UpdateClassRequest {
   name?: string;
   academicYearId?: string;
   grade?: Grade;
-  subjectTeachers?: { teacherId: string; subjectId: string }[]; // update relasi guru mata pelajaran
 }
 
 export interface ClassResponse {
@@ -35,12 +33,5 @@ export interface ClassResponse {
   grade: Grade;
   createdAt: Date;
   updatedAt: Date;
-  subjectClassTeacher?: SubjectClassTeacherResponse[];
 }
 
-export interface SubjectClassTeacherResponse {
-  id: string;
-  subjectId: string;
-  classId: string;
-  teacherId: string;
-}

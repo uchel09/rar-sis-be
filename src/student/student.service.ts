@@ -102,6 +102,46 @@ export class StudentService {
   }
 
   // ✅ READ ALL
+  async findAllStudentByClassId(classId: string): Promise<StudentResponse[]> {
+    const students = await this.prismaService.student.findMany({
+      where: { classId: classId },
+      include: {
+        user: true,
+        class: true,
+        parents: { include: { parent: { include: { user: true } } } },
+      },
+      orderBy: { user: { fullName: 'desc' } },
+    });
+
+    return students.map((s) => ({
+      id: s.id,
+      schoolId: s.schoolId,
+      class: s.class
+        ? {
+            id: s.class.id,
+            name: s.class.name,
+            grade: s.class.grade,
+          }
+        : undefined,
+      enrollmentNumber: s.enrollmentNumber,
+      dob: s.dob,
+      address: s.address || undefined,
+      user: {
+        id: s.user.id,
+        fullName: s.user.fullName,
+        email: s.user.email,
+        gender: s.user.gender,
+      },
+      parents: s.parents.map((p) => ({
+        id: p.parent.id,
+        fullName: p.parent.user.fullName,
+        email: p.parent.user.email,
+      })),
+      isActive: s.isActive,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    }));
+  }
   async findAll(): Promise<StudentResponse[]> {
     const students = await this.prismaService.student.findMany({
       include: {
@@ -141,7 +181,6 @@ export class StudentService {
       updatedAt: s.updatedAt,
     }));
   }
-
   // ✅ READ BY ID
   async findById(id: string): Promise<StudentResponse> {
     const student = await this.prismaService.student.findUnique({
@@ -287,6 +326,9 @@ export class StudentService {
       throw new NotFoundException(`Student with id ${id} not found`);
 
     await this.prismaService.$transaction(async (tx) => {
+      await tx.studentParent.deleteMany({
+        where: {studentId: id}
+      })
       await tx.student.delete({ where: { id } });
       await tx.user.delete({ where: { id: student.userId } });
     });

@@ -11,11 +11,11 @@ export class TeacherValidation {
       .string()
       .min(3, { message: 'Full name must be at least 3 characters' }),
     schoolId: z.string().uuid({ message: 'schoolId must be a valid UUID' }),
-    nik: z.string().min(3, { message: 'NIK must be at least 3 characters' }),
-    nip: z.string().optional(),
+    nik: z.string().min(16, { message: 'NIK must be at least 3 characters' }),
+    nip: z.string().min(12).optional(),
     hireDate: z.date().optional(),
     dob: z.date(),
-    phone: z.string().min(12),
+    phone: z.string().min(10),
     gender: z.enum(Gender, { message: 'Invalid Gender value' }),
   });
 

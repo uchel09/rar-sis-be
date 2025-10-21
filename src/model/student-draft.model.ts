@@ -68,7 +68,6 @@ export interface StudentDraftResponse {
   fullName: string;
   schoolId: string;
   enrollmentNumber?: string;
-  targetClassId?: string;
   gender: Gender;
   academicYear: {
     id: string;
@@ -79,6 +78,11 @@ export interface StudentDraftResponse {
     fullname: string;
     classId: string;
     className: string;
+  },
+  targetClass?: {
+    id: string;
+    name: string;
+    grade: Grade;
   }
   dob: Date;
   address?: string;

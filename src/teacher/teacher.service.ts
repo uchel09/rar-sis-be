@@ -65,7 +65,7 @@ export class TeacherService {
           password: hashedPassword,
           fullName: createRequest.fullName,
           role: Role.TEACHER,
-          gender: createRequest.gender
+          gender: createRequest.gender,
         },
       });
 
@@ -80,17 +80,20 @@ export class TeacherService {
           dob: createRequest.dob,
           phone: createRequest.phone,
           isActive: true,
-          subjectClassTeacher: createRequest.subjectClassTeacher
-            ? {
-                create: createRequest.subjectClassTeacher.map((st) => ({
-                  classId: st.classId,
-                  subjectId: st.subjectId,
-                })),
-              }
-            : undefined,
         },
 
-        include: { user: true, subjectClassTeacher: true },
+        include: {
+          user: true,
+          subjectTeachers: {
+            include: {
+              subject: true,
+
+              teacher: {
+                include: { user: true },
+              },
+            },
+          },
+        },
       });
     });
 
@@ -109,18 +112,12 @@ export class TeacherService {
         email: teacher.user.email,
         gender: teacher.user.gender,
       },
-      subjectClassTeacher: (
-        teacher.subjectClassTeacher as {
-          teacherId: string;
-          subjectId: string;
-          id: string;
-          classId: string;
-        }[]
-      ).map((s) => ({
+      subjectTeachers: teacher.subjectTeachers.map((s) => ({
         id: s.id,
-        classId: s.classId,
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
       })),
       createdAt: teacher.createdAt,
       updatedAt: teacher.updatedAt,
@@ -131,7 +128,18 @@ export class TeacherService {
   async findAll(): Promise<TeacherResponse[]> {
     this.logger.info('Find all teachers');
     const teachers = await this.prismaService.teacher.findMany({
-      include: { user: true, subjectClassTeacher: true },
+      include: {
+        user: true,
+        subjectTeachers: {
+          include: {
+            subject: true,
+
+            teacher: {
+              include: { user: true },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -148,20 +156,14 @@ export class TeacherService {
         id: teacher.user.id,
         fullName: teacher.user.fullName,
         email: teacher.user.email,
-        gender: teacher.user.gender
+        gender: teacher.user.gender,
       },
-      subjectClassTeacher: (
-        teacher.subjectClassTeacher as {
-          teacherId: string;
-          subjectId: string;
-          id: string;
-          classId: string;
-        }[]
-      ).map((s) => ({
+      subjectTeachers: teacher.subjectTeachers.map((s) => ({
         id: s.id,
-        classId: s.classId,
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
       })),
       createdAt: teacher.createdAt,
       updatedAt: teacher.updatedAt,
@@ -173,7 +175,18 @@ export class TeacherService {
     this.logger.info(`Find teacher by id: ${id}`);
     const teacher = await this.prismaService.teacher.findUnique({
       where: { id },
-      include: { user: true, subjectClassTeacher: true },
+      include: {
+        user: true,
+        subjectTeachers: {
+          include: {
+            subject: true,
+
+            teacher: {
+              include: { user: true },
+            },
+          },
+        },
+      },
     });
     if (!teacher) {
       throw new NotFoundException(`Teacher with id ${id} not found`);
@@ -191,21 +204,16 @@ export class TeacherService {
         id: teacher.user.id,
         fullName: teacher.user.fullName,
         email: teacher.user.email,
-        gender: teacher.user.gender
+        gender: teacher.user.gender,
       },
-      subjectClassTeacher: (
-        teacher.subjectClassTeacher as {
-          teacherId: string;
-          subjectId: string;
-          id: string;
-          classId: string;
-        }[]
-      ).map((s) => ({
+      subjectTeachers: teacher.subjectTeachers.map((s) => ({
         id: s.id,
-        classId: s.classId,
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
       })),
+
       createdAt: teacher.createdAt,
       updatedAt: teacher.updatedAt,
     };
@@ -268,8 +276,7 @@ export class TeacherService {
           if (updateRequest.email) userData.email = updateRequest.email;
           if (updateRequest.fullName)
             userData.fullName = updateRequest.fullName;
-          if (updateRequest.gender) 
-            userData.gender = updateRequest.gender;
+          if (updateRequest.gender) userData.gender = updateRequest.gender;
           if (updateRequest.password)
             userData.password = await bcrypt.hash(updateRequest.password, 10);
 
@@ -289,16 +296,19 @@ export class TeacherService {
             dob: updateRequest.dob,
             phone: updateRequest.phone,
             isActive: updateRequest.isActive,
-            subjectClassTeacher: updateRequest.subjectClassTeacher
-              ? {
-                  create: updateRequest.subjectClassTeacher.map((st) => ({
-                    classId: st.classId,
-                    subjectId: st.subjectId,
-                  })),
-                }
-              : undefined,
           },
-          include: { user: true, subjectClassTeacher: true },
+          include: {
+            user: true,
+            subjectTeachers: {
+              include: {
+                subject: true,
+
+                teacher: {
+                  include: { user: true },
+                },
+              },
+            },
+          },
         });
       },
     );
@@ -315,20 +325,14 @@ export class TeacherService {
         id: updatedTeacher.user.id,
         fullName: updatedTeacher.user.fullName,
         email: updatedTeacher.user.email,
-        gender: updatedTeacher.user.gender
+        gender: updatedTeacher.user.gender,
       },
-      subjectClassTeacher: (
-        updatedTeacher.subjectClassTeacher as {
-          teacherId: string;
-          subjectId: string;
-          id: string;
-          classId: string;
-        }[]
-      ).map((s) => ({
+      subjectTeachers: updatedTeacher.subjectTeachers.map((s) => ({
         id: s.id,
-        classId: s.classId,
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
       })),
       createdAt: updatedTeacher.createdAt,
       updatedAt: updatedTeacher.updatedAt,

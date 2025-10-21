@@ -195,7 +195,7 @@ model Student {
   parents               StudentParent[]
   studentClassHistories StudentClassHistory[]
   attendances           Attendance[]
-  StudentDraft          StudentDraft[]
+  studentDrafts         StudentDraft[]
 }
 
 model StudentDraft {
@@ -227,16 +227,18 @@ model StudentDraft {
   targetClass  Class?       @relation(fields: [targetClassId], references: [id])
 }
 
+// model StudentDraftPublic{}
+
 model Parent {
-  id        String   @id @default(uuid())
-  userId    String   @unique
+  id        String    @id @default(uuid())
+  userId    String    @unique
   phone     String
   address   String?
   dob       DateTime?
-  nik       String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  nik       String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user     User            @relation(fields: [userId], references: [id])
   students StudentParent[]
@@ -266,15 +268,12 @@ model Teacher {
   updatedAt DateTime @updatedAt
   isActive  Boolean
 
-  user        User         @relation(fields: [userId], references: [id])
-  school      School       @relation(fields: [schoolId], references: [id])
-  attendances Attendance[]
+  user   User   @relation(fields: [userId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
 
   homerooms Class[] @relation("HomeroomClass")
 
-  timetables Timetable[]
-
-  subjectClassTeacher SubjectClassTeacher[]
+  subjectTeachers SubjectTeacher[]
 }
 
 model Staff {
@@ -307,13 +306,10 @@ model Class {
   school                School                @relation(fields: [schoolId], references: [id])
   students              Student[]
   studentClassHistories StudentClassHistory[]
+  homeroomTeacher       Teacher?              @relation("HomeroomClass", fields: [homeroomTeacherId], references: [id])
+  academicYear          AcademicYear          @relation(fields: [academicYearId], references: [id])
+  studentDrafts         StudentDraft[]
   timetables            Timetable[]
-
-  subjectClassTeacher SubjectClassTeacher[]
-
-  homeroomTeacher Teacher?       @relation("HomeroomClass", fields: [homeroomTeacherId], references: [id])
-  academicYear    AcademicYear   @relation(fields: [academicYearId], references: [id])
-  StudentDraft    StudentDraft[]
 }
 
 model StudentClassHistory {
@@ -342,71 +338,61 @@ model Subject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  school              School                @relation(fields: [schoolId], references: [id])
-  attendances         Attendance[]
-  timetables          Timetable[]
-  subjectClassTeacher SubjectClassTeacher[]
+  school          School           @relation(fields: [schoolId], references: [id])
+  subjectTeachers SubjectTeacher[]
 }
 
 model Attendance {
-  id             String           @id @default(uuid())
-  studentId      String
-  subjectId      String
-  timetableId    String
-  teacherId      String
-  schoolId       String
-  date           DateTime
-  semester       Semester
-  status         AttendanceStatus
-  note           String?
-  academicYearId String
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id          String           @id @default(uuid())
+  studentId   String
+  timetableId String
+  schoolId    String
+  date        DateTime
+  semester    Semester
+  status      AttendanceStatus
+  note        String?
+  approve     Boolean
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  student      Student      @relation(fields: [studentId], references: [id])
-  subject      Subject      @relation(fields: [subjectId], references: [id])
-  teacher      Teacher      @relation(fields: [teacherId], references: [id])
-  school       School       @relation(fields: [schoolId], references: [id])
-  timetable    Timetable    @relation(fields: [timetableId], references: [id])
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  student   Student   @relation(fields: [studentId], references: [id])
+  school    School    @relation(fields: [schoolId], references: [id])
+  timetable Timetable @relation(fields: [timetableId], references: [id])
 
   @@unique([studentId, timetableId, date])
 }
 
 model Timetable {
-  id             String    @id @default(uuid())
-  schoolId       String
-  classId        String
-  subjectId      String
-  teacherId      String
-  semester       Semester
-  dayOfWeek      DayOfWeek
-  startTime      DateTime
-  endTime        DateTime
-  academicYearId String
-  isActive       Boolean
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  schoolId              String
+  subjectTeacherid String?   @map("subject_teacher_id")
+  classId               String
+  semester              Semester
+  dayOfWeek             DayOfWeek
+  startTime             DateTime
+  endTime               DateTime
+  academicYearId        String
+  isActive              Boolean
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-  school       School       @relation(fields: [schoolId], references: [id])
-  class        Class        @relation(fields: [classId], references: [id])
-  subject      Subject      @relation(fields: [subjectId], references: [id])
-  teacher      Teacher      @relation(fields: [teacherId], references: [id])
-  attendances  Attendance[]
+  academicYear        AcademicYear    @relation(fields: [academicYearId], references: [id])
+  school              School          @relation(fields: [schoolId], references: [id])
+  class               Class           @relation(fields: [classId], references: [id])
+  attendances         Attendance[]
+  subjectTeacher SubjectTeacher? @relation(fields: [subjectTeacherid], references: [id])
 }
 
-model SubjectClassTeacher {
+model SubjectTeacher {
   id        String @id @default(uuid())
   subjectId String
-  classId   String
   teacherId String
 
-  subject Subject @relation(fields: [subjectId], references: [id])
-  class   Class   @relation(fields: [classId], references: [id])
-  teacher Teacher @relation(fields: [teacherId], references: [id])
+  subject    Subject     @relation(fields: [subjectId], references: [id])
+  teacher    Teacher     @relation(fields: [teacherId], references: [id])
+  timetables Timetable[]
 
-  @@unique([subjectId, classId, teacherId])
+  @@unique([subjectId, teacherId])
 }
 
 model AcademicYear {
@@ -421,9 +407,7 @@ model AcademicYear {
   studentDrafts         StudentDraft[]
   studentClassHistories StudentClassHistory[]
 
-  timetable Timetable[]
-
-  attendance Attendance[]
+  timetables Timetable[]
 }
 
 // =================================== Gambaran Fitur Lanjutan ====================================

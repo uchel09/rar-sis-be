@@ -1,14 +1,11 @@
-import { Semester, AttendanceStatus } from 'generated/prisma';
+import { Semester, AttendanceStatus, DayOfWeek } from 'generated/prisma';
 
 export interface CreateAttendanceRequest {
   studentId: string;
-  subjectId: string;
-  schoolId: string;
   timetableId: string;
-  teacherId: string;
-  academicYearId: string;
-  semester: Semester;
+  schoolId: string;
   date: Date;
+  semester: Semester;
   status: AttendanceStatus;
   note?: string;
 }
@@ -16,26 +13,52 @@ export interface CreateAttendanceRequest {
 export interface UpdateAttendanceRequest {
   status?: AttendanceStatus;
   note?: string;
-  timetableId?: string;
-  teacherId?: string;
-  academicYearId: string;
 }
 
 export interface AttendanceResponse {
   id: string;
   studentId: string;
-  subjectId: string;
+  timetableId: string;
   schoolId: string;
+  date: Date;
   semester: Semester;
-  date: string;
   status: AttendanceStatus;
   note?: string;
-  timetableId: string;
-  teacherId: string;
-  createdAt: string;
-  updatedAt: string;
-  academicYearId: string;
+  approve: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+
+  timetable: {
+    id: string;
+    dayOfWeek: DayOfWeek;
+    startTime: string;
+    endTime: string;
+    academicYear: {
+      id: string;
+      name: string;
+    };
+    subjectClassTeacher: {
+      id: string;
+      subject: {
+        id: string;
+        name: string;
+      };
+      class: {
+        id: string;
+        name: string;
+      };
+      teacher: {
+        id: string;
+        user: {
+          id: string;
+          fullName: string;
+        };
+      };
+    };
+  };
 }
+
+
 
 export interface BulkAttendanceRequest {
   subjectId: string;
@@ -50,4 +73,3 @@ export interface BulkAttendanceRequest {
     teacherId?: string | null;
   }[];
 }
-

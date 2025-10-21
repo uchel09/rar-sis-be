@@ -1,5 +1,6 @@
 import {
   Body,
+  Query,
   Controller,
   Delete,
   Get,
@@ -16,6 +17,7 @@ import {
 } from 'src/model/class.model';
 import { WebResponse } from 'src/model/web.model';
 import { UtilService } from 'src/common/util.service';
+import { Grade } from 'generated/prisma';
 
 @Controller('/api/classes')
 export class ClassController {
@@ -34,6 +36,18 @@ export class ClassController {
     return {
       data: result,
     };
+  }
+
+  @Get('/grade')
+  async findAllByGrade(
+    @Query('grade') grade?: Grade, // <-- pakai @Query
+  ): Promise<WebResponse<ClassResponse[]>> {
+    if (!grade) {
+      return { data: [] };
+    }
+
+    const result = await this.classService.findAllByGrade(grade);
+    return { data: result };
   }
 
   // ✅ READ ALL

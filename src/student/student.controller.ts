@@ -49,6 +49,15 @@ export class StudentController {
   }
 
   // ✅ READ BY ID
+  @Get('/class/:id')
+  async findAllStudentByClassId(
+    @Param('id') id: string,
+  ): Promise<WebResponse<StudentResponse[]>> {
+    const result = await this.studentService.findAllStudentByClassId(id);
+    return {
+      data: result,
+    };
+  }
   @Get(':id')
   async findById(
     @Param('id') id: string,
@@ -65,11 +74,12 @@ export class StudentController {
     @Param('id') id: string,
     @Body() data: UpdateStudentRequest,
   ): Promise<WebResponse<StudentResponse>> {
-    const normalizedRequest = UtilService.normalizeOptionalEmptyStrings2(
-      data,
-      ['enrollmentNumber', 'address', 'classId'],
-    );
- 
+    const normalizedRequest = UtilService.normalizeOptionalEmptyStrings2(data, [
+      'enrollmentNumber',
+      'address',
+      'classId',
+    ]);
+
     const result = await this.studentService.update(id, normalizedRequest);
     return {
       data: result,

@@ -49,22 +49,33 @@ export class SubjectService {
         name: createRequest.name,
         grade: createRequest.grade,
         schoolId: createRequest.schoolId,
-        // create pivot relations if provided
-        subjectClassTeacher: {
-          create: createRequest.subjectClassTeacher?.map((sct) => ({
-            classId: sct.classId,
-            teacherId: sct.teacherId,
-          })),
-        },
       },
       include: {
-        attendances: true,
-        timetables: true,
-        subjectClassTeacher: true,
+        subjectTeachers: {
+          include: {
+            subject: true,
+            teacher: {
+              include: { user: true },
+            },
+          },
+        },
       },
     });
 
-    return subject as unknown as SubjectResponse;
+    return {
+      id: subject.id,
+      name: subject.name,
+      grade: subject.grade,
+      createdAt: subject.createdAt,
+      updatedAt: subject.updatedAt,
+      subjectTeachers: subject.subjectTeachers.map((s) => ({
+        id: s.id,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
+      })),
+    };
   }
 
   // ✅ CREATE Subject (safe)
@@ -77,9 +88,15 @@ export class SubjectService {
     const subject = await this.prismaService.subject.findUnique({
       where: { id },
       include: {
-        attendances: true,
-        timetables: true,
-        subjectClassTeacher: true,
+        subjectTeachers: {
+          include: {
+            subject: true,
+
+            teacher: {
+              include: { user: true },
+            },
+          },
+        },
       },
     });
 
@@ -91,26 +108,6 @@ export class SubjectService {
       SubjectValidation.UPDATE,
       data,
     );
-
-    // update pivot table if provided
-    if (updateRequest.subjectClassTeacher) {
-      // hapus semua relasi lama
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      await this.prismaService.subjectClassTeacher.deleteMany({
-        where: { subjectId: id },
-      });
-
-      // buat relasi baru
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      await this.prismaService.subjectClassTeacher.createMany({
-        data: updateRequest.subjectClassTeacher.map((sct) => ({
-          subjectId: id,
-          classId: sct.classId,
-          teacherId: sct.teacherId,
-        })),
-      });
-    }
-
     const updated = await this.prismaService.subject.update({
       where: { id },
       data: {
@@ -118,37 +115,76 @@ export class SubjectService {
         grade: updateRequest.grade,
       },
       include: {
-        attendances: true,
-        timetables: true,
-        subjectClassTeacher: true,
+        subjectTeachers: {
+          include: {
+            subject: true,
+            teacher: {
+              include: { user: true },
+            },
+          },
+        },
       },
     });
 
-    return updated as unknown as SubjectResponse;
+    return {
+      id: updated.id,
+      name: updated.name,
+      grade: updated.grade,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+      subjectTeachers: updated.subjectTeachers.map((s) => ({
+        id: s.id,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
+      })),
+    };
   }
 
-  // ✅ READ ALL Subjects (unsafe, langsung return)
   async findAll(): Promise<SubjectResponse[]> {
     this.logger.info('Find all subjects');
-    return (await this.prismaService.subject.findMany({
+
+    const subjects = await this.prismaService.subject.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        attendances: true,
-        timetables: true,
-        subjectClassTeacher: true,
+        subjectTeachers: {
+          include: {
+            subject: true,
+            teacher: { include: { user: true } },
+          },
+        },
       },
-    })) as unknown as SubjectResponse[];
+    });
+
+    return subjects.map((subject) => ({
+      id: subject.id,
+      name: subject.name,
+      grade: subject.grade,
+      createdAt: subject.createdAt,
+      updatedAt: subject.updatedAt,
+      subjectTeachers: subject.subjectTeachers.map((s) => ({
+        id: s.id,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
+      })),
+    }));
   }
 
-  // ✅ READ BY ID (unsafe, langsung return)
   async findById(id: string): Promise<SubjectResponse> {
     this.logger.info(`Find subject by id: ${id}`);
+
     const subject = await this.prismaService.subject.findUnique({
       where: { id },
       include: {
-        attendances: true,
-        timetables: true,
-        subjectClassTeacher: true,
+        subjectTeachers: {
+          include: {
+            subject: true,
+            teacher: { include: { user: true } },
+          },
+        },
       },
     });
 
@@ -156,37 +192,35 @@ export class SubjectService {
       throw new NotFoundException(`Subject with id ${id} not found`);
     }
 
-    return subject as unknown as SubjectResponse;
+    return {
+      id: subject.id,
+      name: subject.name,
+      grade: subject.grade,
+      createdAt: subject.createdAt,
+      updatedAt: subject.updatedAt,
+      subjectTeachers: subject.subjectTeachers.map((s) => ({
+        id: s.id,
+        subjectId: s.subject.id,
+        subjectName: s.subject.name,
+        teacherId: s.teacher.id,
+        teacherFullName: s.teacher.user.fullName,
+      })),
+    };
   }
 
-  // ✅ DELETE Subject (unsafe, langsung return message)
+  // ✅ DELETE Subject
   async delete(id: string): Promise<{ message: string }> {
     this.logger.info(`Delete subject by id: ${id}`);
+
     const subject = await this.prismaService.subject.findUnique({
       where: { id },
-      include: {
-        attendances: true,
-        timetables: true,
-        subjectClassTeacher: true,
-      },
     });
 
     if (!subject) {
       throw new NotFoundException(`Subject with id ${id} not found`);
     }
 
-    await this.prismaService.$transaction(
-      async (prisma: typeof this.prismaService) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        await prisma.subjectClassTeacher.deleteMany({
-          where: { subjectId: id },
-        });
-        await prisma.attendance.deleteMany({ where: { subjectId: id } });
-        await prisma.timetable.deleteMany({ where: { subjectId: id } });
-        await prisma.subject.delete({ where: { id } });
-      },
-    );
-
-    return { message: `Subject ${subject.name} deleted successfully` };
+    await this.prismaService.subject.delete({ where: { id } });
+    return { message: `Subject ${id} deleted successfully` };
   }
 }

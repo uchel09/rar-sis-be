@@ -1,204 +1,271 @@
-import {
-  HttpException,
-  Injectable,
-  NotFoundException,
-  Inject,
-} from '@nestjs/common';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { PrismaService } from 'src/common/prisma.service';
-import { VallidationService } from 'src/common/validation.service';
-import { Logger } from 'winston';
-import { AttendanceValidation } from './attendance.validation';
-import {
-  CreateAttendanceRequest,
-  UpdateAttendanceRequest,
-  AttendanceResponse,
-} from 'src/model/attendance.model';
-import { Attendance } from 'generated/prisma';
+// import {
+//   HttpException,
+//   Injectable,
+//   NotFoundException,
+//   Inject,
+// } from '@nestjs/common';
+// import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+// import { PrismaService } from 'src/common/prisma.service';
+// import { VallidationService } from 'src/common/validation.service';
+// import { Logger } from 'winston';
+// import { AttendanceValidation } from './attendance.validation';
+// import {
+//   CreateAttendanceRequest,
+//   UpdateAttendanceRequest,
+//   AttendanceResponse,
+// } from 'src/model/attendance.model';
 
-@Injectable()
-export class AttendanceService {
-  constructor(
-    private validationService: VallidationService,
-    @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
-    private prismaService: PrismaService,
-  ) {}
+// @Injectable()
+// export class AttendanceService {
+//   constructor(
+//     private validationService: VallidationService,
+//     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
+//     private prismaService: PrismaService,
+//   ) {}
 
-  // ✅ CREATE
-  async create(request: CreateAttendanceRequest): Promise<AttendanceResponse> {
-    this.logger.info(`Create Attendance ${JSON.stringify(request)}`);
+//   // ✅ BULK CREATE
+//   async createBulk(
+//     requests: CreateAttendanceRequest[],
+//   ): Promise<AttendanceResponse[]> {
+//     this.logger.info(`Create bulk attendance ${JSON.stringify(requests)}`);
 
-    const createRequest: CreateAttendanceRequest =
-      this.validationService.validate(AttendanceValidation.CREATE, request);
+//     const validatedRequests = requests.map((r) =>
+//       this.validationService.validate(AttendanceValidation.CREATE, r),
+//     );
 
-    // Optional: cek apakah sudah ada untuk student-subject-date-timetable
-    const exist = await this.prismaService.attendance.count({
-      where: {
-        studentId: createRequest.studentId,
-        subjectId: createRequest.subjectId,
-        date: new Date(createRequest.date),
-        timetableId: createRequest.timetableId,
-      },
-    });
-    if (exist !== 0) {
-      throw new HttpException(
-        'Attendance already exists for this student & subject & date',
-        400,
-      );
-    }
+//     // Cek duplikat
+//     for (const req of validatedRequests) {
+//       const exist = await this.prismaService.attendance.count({
+//         where: {
+//           studentId: req.studentId,
+//           timetableId: req.timetableId,
+//           date: new Date(req.date),
+//         },
+//       });
+//       if (exist > 0) {
+//         throw new HttpException(
+//           `Attendance already exists for student ${req.studentId} on timetable ${req.timetableId}`,
+//           400,
+//         );
+//       }
+//     }
 
-    const attendance = await this.prismaService.attendance.create({
-      data: {
-        studentId: createRequest.studentId,
-        subjectId: createRequest.subjectId,
-        timetableId: createRequest.timetableId,
-        schoolId: createRequest.schoolId,
-        teacherId: createRequest.teacherId,
-        date: createRequest.date,
-        semester: createRequest.semester,
-        status: createRequest.status,
-        note: createRequest.note || null,
-        academicYearId: createRequest.academicYearId
-      },
-    });
+//     const attendances = await this.prismaService.$transaction(
+//       validatedRequests.map((r) =>
+//         this.prismaService.attendance.create({
+//           data: {
+//             studentId: r.studentId,
+//             timetableId: r.timetableId,
+//             schoolId: r.schoolId,
+//             date: r.date,
+//             semester: r.semester,
+//             status: r.status,
+//             note: r.note || null,
+//           },
+//           include: {
+//             timetable: {
+//               include: {
+//                 academicYear: {
+//                   select: { id: true, name: true },
+//                 },
+//                 subjectClassTeacher: {
+//                   include: {
+//                     subject: { select: { id: true, name: true } },
+//                     class: { select: { id: true, name: true } },
+//                     teacher: {
+//                       include: {
+//                         user: { select: { id: true, fullName: true } },
+//                       },
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//         }),
+//       ),
+//     );
 
-    return {
-      id: attendance.id,
-      studentId: attendance.studentId,
-      subjectId: attendance.subjectId,
-      schoolId: attendance.schoolId,
-      timetableId: attendance.timetableId,
-      teacherId: attendance.teacherId,
-      academicYearId: attendance.academicYearId,
-      date: attendance.date.toISOString(),
-      semester: attendance.semester,
-      status: attendance.status,
-      note: attendance.note || undefined,
-      createdAt: attendance.createdAt.toISOString(),
-      updatedAt: attendance.updatedAt.toISOString(),
-    };
-  }
+//     return attendances.map((att) => ({
+//       id: att.id,
+//       studentId: att.studentId,
+//       timetableId: att.timetableId,
+//       schoolId: att.schoolId,
+//       date: att.date.toISOString(),
+//       semester: att.semester,
+//       status: att.status,
+//       note: att.note || undefined,
+//       approve: att.approve,
+//       createdAt: att.createdAt.toISOString(),
+//       updatedAt: att.updatedAt.toISOString(),
+//       timetable: {
+//         id: att.timetable.id,
+//         dayOfWeek: att.timetable.dayOfWeek,
+//         startTime: att.timetable.startTime,
+//         endTime: att.timetable.endTime,
+//         academicYear: {
+//           id: att.timetable.academicYear.id,
+//           name: att.timetable.academicYear.name,
+//         },
+//         subjectClassTeacher: {
+//           id: att.timetable.subjectClassTeacher.id,
+//           subject: att.timetable.subjectClassTeacher.subject,
+//           class: att.timetable.subjectClassTeacher.class,
+//           teacher: {
+//             id: att.timetable.subjectClassTeacher.teacher.id,
+//             user: att.timetable.subjectClassTeacher.teacher.user,
+//           },
+//         },
+//       },
+//     }));
+//   }
 
-  // ✅ READ ALL
-  async findAll(): Promise<AttendanceResponse[]> {
-    this.logger.info('Find all attendances');
+//   // ✅ BULK UPDATE
+//   async updateBulk(
+//     updates: { id: string; data: UpdateAttendanceRequest }[],
+//   ): Promise<AttendanceResponse[]> {
+//     this.logger.info(`Update bulk attendance ${JSON.stringify(updates)}`);
 
-    const attendances = await this.prismaService.attendance.findMany({
-      orderBy: { date: 'desc' },
-    });
+//     const results: AttendanceResponse[] = [];
 
-    return attendances.map((att) => ({
-      id: att.id,
-      studentId: att.studentId,
-      subjectId: att.subjectId,
-      schoolId: att.schoolId,
-      timetableId: att.timetableId,
-      teacherId: att.teacherId,
-      date: att.date.toISOString(),
-      semester: att.semester,
-      status: att.status,
-      note: att.note || undefined,
-      createdAt: att.createdAt.toISOString(),
-      updatedAt: att.updatedAt.toISOString(),
-      academicYearId: att.academicYearId,
-    }));
-  }
+//     for (const { id, data } of updates) {
+//       const exist = await this.prismaService.attendance.findUnique({
+//         where: { id },
+//       });
+//       if (!exist)
+//         throw new NotFoundException(`Attendance with id ${id} not found`);
 
-  // ✅ READ BY ID
-  async findById(id: string): Promise<AttendanceResponse> {
-    this.logger.info(`Find attendance by id: ${id}`);
+//       const validated = this.validationService.validate(
+//         AttendanceValidation.UPDATE,
+//         data,
+//       );
 
-    const att = await this.prismaService.attendance.findUnique({
-      where: { id },
-    });
-    if (!att) throw new NotFoundException(`Attendance with id ${id} not found`);
+//       const updated = await this.prismaService.attendance.update({
+//         where: { id },
+//         data: validated,
+//         include: {
+//           timetable: {
+//             include: {
+//               academicYear: { select: { id: true, name: true } },
+//               subjectClassTeacher: {
+//                 include: {
+//                   subject: { select: { id: true, name: true } },
+//                   class: { select: { id: true, name: true } },
+//                   teacher: {
+//                     include: {
+//                       user: { select: { id: true, fullName: true } },
+//                     },
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       });
 
-    return {
-      id: att.id,
-      studentId: att.studentId,
-      subjectId: att.subjectId,
-      schoolId: att.schoolId,
-      timetableId: att.timetableId,
-      teacherId: att.teacherId,
-      date: att.date.toISOString(),
-      semester: att.semester,
-      status: att.status,
-      note: att.note || undefined,
-      academicYearId: att.academicYearId,
-      createdAt: att.createdAt.toISOString(),
-      updatedAt: att.updatedAt.toISOString(),
-    };
-  }
+//       results.push({
+//         id: updated.id,
+//         studentId: updated.studentId,
+//         timetableId: updated.timetableId,
+//         schoolId: updated.schoolId,
+//         date: updated.date.toISOString(),
+//         semester: updated.semester,
+//         status: updated.status,
+//         note: updated.note || undefined,
+//         approve: updated.approve,
+//         createdAt: updated.createdAt.toISOString(),
+//         updatedAt: updated.updatedAt.toISOString(),
+//         timetable: {
+//           id: updated.timetable.id,
+//           dayOfWeek: updated.timetable.dayOfWeek,
+//           startTime: updated.timetable.startTime,
+//           endTime: updated.timetable.endTime,
+//           academicYear: {
+//             id: updated.timetable.academicYear.id,
+//             name: updated.timetable.academicYear.name,
+//           },
+//           subjectClassTeacher: {
+//             id: updated.timetable.subjectClassTeacher.id,
+//             subject: updated.timetable.subjectClassTeacher.subject,
+//             class: updated.timetable.subjectClassTeacher.class,
+//             teacher: {
+//               id: updated.timetable.subjectClassTeacher.teacher.id,
+//               user: updated.timetable.subjectClassTeacher.teacher.user,
+//             },
+//           },
+//         },
+//       });
+//     }
 
-  // ✅ UPDATE
-  async update(
-    id: string,
-    data: UpdateAttendanceRequest,
-  ): Promise<AttendanceResponse> {
-    this.logger.info(`Update attendance ${id} with ${JSON.stringify(data)}`);
+//     return results;
+//   }
 
-    const exist = await this.prismaService.attendance.findUnique({
-      where: { id },
-    });
-    if (!exist)
-      throw new NotFoundException(`Attendance with id ${id} not found`);
+//   // ✅ FIND ALL BY TIMETABLE + DATE
+//   async findAllByTimetableAndDate(
+//     timetableId: string,
+//     date: Date,
+//   ): Promise<AttendanceResponse[]> {
+//     this.logger.info(
+//       `Find attendance by timetable ${timetableId} and date ${date}`,
+//     );
 
-    const updateRequest: UpdateAttendanceRequest =
-      this.validationService.validate(AttendanceValidation.UPDATE, data);
+//     const attendances = await this.prismaService.attendance.findMany({
+//       where: {
+//         timetableId,
+//         date,
+//       },
+//       include: {
+//         timetable: {
+//           include: {
+//             academicYear: { select: { id: true, name: true } },
+//             subjectClassTeacher: {
+//               include: {
+//                 subject: { select: { id: true, name: true } },
+//                 class: { select: { id: true, name: true } },
+//                 teacher: {
+//                   include: {
+//                     user: { select: { id: true, fullName: true } },
+//                   },
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//       orderBy: { studentId: 'asc' },
+//     });
 
-    const updated = await this.prismaService.attendance.update({
-      where: { id },
-      data: updateRequest,
-    });
-
-    return {
-      id: updated.id,
-      studentId: updated.studentId,
-      subjectId: updated.subjectId,
-      schoolId: updated.schoolId,
-      timetableId: updated.timetableId,
-      teacherId: updated.teacherId,
-      date: updated.date.toISOString(),
-      semester: updated.semester,
-      status: updated.status,
-      note: updated.note || undefined,
-      createdAt: updated.createdAt.toISOString(),
-      updatedAt: updated.updatedAt.toISOString(),
-      academicYearId: updated.academicYearId
-    };
-  }
-
-  // ✅ DELETE
-  async delete(id: string): Promise<{ message: string }> {
-    this.logger.info(`Delete attendance by id: ${id}`);
-
-    const exist = await this.prismaService.attendance.findUnique({
-      where: { id },
-    });
-    if (!exist)
-      throw new NotFoundException(`Attendance with id ${id} not found`);
-
-    await this.prismaService.attendance.delete({ where: { id } });
-    return { message: `Attendance ${id} deleted successfully` };
-  }
-
-  async getAttendanceByTimetable(
-    timetableId: string,
-    date: Date,
-  ): Promise<Attendance[]> {
-    const attendances = await this.prismaService.attendance.findMany({
-      where: {
-        timetableId,
-        date: date, // pastikan field di modelmu sesuai
-      },
-      include: {
-        student: true,
-        teacher: true,
-        subject: true,
-      },
-      orderBy: { studentId: 'asc' },
-    });
-
-    return attendances;
-  }
-}
+//     return attendances.map((att) => ({
+//       id: att.id,
+//       studentId: att.studentId,
+//       timetableId: att.timetableId,
+//       schoolId: att.schoolId,
+//       date: att.date.toISOString(),
+//       semester: att.semester,
+//       status: att.status,
+//       note: att.note || undefined,
+//       approve: att.approve,
+//       createdAt: att.createdAt.toISOString(),
+//       updatedAt: att.updatedAt.toISOString(),
+//       timetable: {
+//         id: att.timetable.id,
+//         dayOfWeek: att.timetable.dayOfWeek,
+//         startTime: att.timetable.startTime,
+//         endTime: att.timetable.endTime,
+//         academicYear: {
+//           id: att.timetable.academicYear.id,
+//           name: att.timetable.academicYear.name,
+//         },
+//         subjectClassTeacher: {
+//           id: att.timetable.subjectClassTeacher.id,
+//           subject: att.timetable.subjectClassTeacher.subject,
+//           class: att.timetable.subjectClassTeacher.class,
+//           teacher: {
+//             id: att.timetable.subjectClassTeacher.teacher.id,
+//             user: att.timetable.subjectClassTeacher.teacher.user,
+//           },
+//         },
+//       },
+//     }));
+//   }
+// }

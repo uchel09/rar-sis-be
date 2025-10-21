@@ -12,14 +12,7 @@ export class ClassValidation {
     academicYearId: z
       .uuid({ message: 'academicYearId must be a valid UUID' }),
     grade: z.enum(Object.values(Grade) as [string, ...string[]]),
-    subjectTeachers: z
-      .array(
-        z.object({
-          teacherId: z.uuid({ message: 'teacherId must be a valid UUID' }),
-          subjectId: z.uuid({ message: 'subjectId must be a valid UUID' }),
-        }),
-      )
-      .optional(),
+  
   });
 
   // ✅ UPDATE Class
@@ -29,13 +22,5 @@ export class ClassValidation {
     name: z.string().min(1).optional(),
     academicYearId: z.uuid().optional(),
     grade: z.enum(Object.values(Grade) as [string, ...string[]]).optional(),
-    subjectTeachers: z
-      .array(
-        z.object({
-          teacherId: z.uuid(),
-          subjectId: z.uuid(),
-        }),
-      )
-      .optional(),
   });
 }

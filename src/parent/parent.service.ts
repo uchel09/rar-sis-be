@@ -16,6 +16,8 @@ import {
   ParentResponse,
 } from 'src/model/parent.model';
 import { Role, Prisma } from 'generated/prisma';
+import { CreateStudentRequest } from 'src/model/student.model';
+import { StudentValidation } from 'src/student/student.validation';
 
 @Injectable()
 export class ParentService {
@@ -43,8 +45,7 @@ export class ParentService {
     });
     if (existEmail !== 0) throw new HttpException('Email already exists', 400);
     if (existNik !== 0) {
-      const parent = await this.findByNik(createRequest.nik);
-      return parent;
+      throw new HttpException('Nik already exists', 400);
     }
 
     const hashedPassword = await bcrypt.hash(createRequest.password, 10);
@@ -88,6 +89,115 @@ export class ParentService {
         updatedAt: parent.updatedAt,
       };
     });
+  }
+  async createParentStudentDraft(
+    parentRequests: CreateParentRequest[],
+    studentRequest: CreateStudentRequest,
+  ): Promise<any> {
+    this.logger.info(`Create Parent Student Draft`);
+
+    // ✅ Validasi semua request
+    const validatedParentRequests = parentRequests.map((parent) =>
+      this.validationService.validate<CreateParentRequest>(
+        ParentValidation.CREATE,
+        parent,
+      ),
+    );
+
+    const createStudentRequest =
+      this.validationService.validate<CreateStudentRequest>(
+        StudentValidation.CREATE,
+        studentRequest,
+      );
+
+    // ✅ Jalankan semua logika di dalam satu transaksi
+    await this.prismaService.$transaction(async (tx) => {
+      const parentIds: string[] = [];
+
+      // 🔁 Loop semua parent
+      for (const p of validatedParentRequests) {
+        // 🔍 Cek apakah parent sudah ada berdasarkan NIK atau email user
+        const existingParent = await tx.parent.findFirst({
+          where: {
+            OR: [{ nik: p.nik }, { user: { email: p.email } }],
+          },
+          include: { user: true },
+        });
+
+        if (existingParent) {
+          parentIds.push(existingParent.id);
+          continue;
+        }
+
+        // 🔐 Buat user dan parent baru
+        const hashedPassword = await bcrypt.hash(p.password, 10);
+        const userParent = await tx.user.create({
+          data: {
+            email: p.email,
+            password: hashedPassword,
+            fullName: p.fullName,
+            role: Role.PARENT,
+            gender: p.gender,
+          },
+        });
+
+        const parent = await tx.parent.create({
+          data: {
+            userId: userParent.id,
+            phone: p.phone,
+            address: p.address,
+            nik: p.nik,
+            isActive: p.isActive ?? true,
+          },
+        });
+
+        parentIds.push(parent.id);
+      }
+
+      // 👦 Buat student baru
+      const hashedPasswordStudent = await bcrypt.hash(
+        createStudentRequest.password,
+        10,
+      );
+
+      const userStudent = await tx.user.create({
+        data: {
+          email: createStudentRequest.email,
+          password: hashedPasswordStudent,
+          fullName: createStudentRequest.fullName,
+          role: Role.STUDENT,
+          gender: createStudentRequest.gender,
+        },
+      });
+
+      const studentRes = await tx.student.create({
+        data: {
+          userId: userStudent.id,
+          schoolId: createStudentRequest.schoolId,
+          classId: createStudentRequest.classId,
+          enrollmentNumber: createStudentRequest.enrollmentNumber || undefined,
+          dob: createStudentRequest.dob,
+          address: createStudentRequest.address,
+          isActive: true,
+        },
+      });
+
+      // 🔗 Buat relasi manual di tabel pivot StudentParent
+      await tx.studentParent.createMany({
+        data: parentIds.map((parentId) => ({
+          studentId: studentRes.id,
+          parentId,
+        })),
+      });
+
+      return {
+        message: 'Parent dan Student berhasil dibuat dalam satu transaksi',
+        studentId: studentRes.id,
+        parentIds,
+      };
+    });
+
+    return { message: 'approve berhasil' };
   }
 
   // ✅ READ ALL
@@ -228,7 +338,6 @@ export class ParentService {
 
     if (!parent) throw new NotFoundException(`Parent with id ${id} not found`);
 
-
     const updateRequest = this.validationService.validate<UpdateParentRequest>(
       ParentValidation.UPDATE,
       data,
@@ -304,6 +413,9 @@ export class ParentService {
     if (!parent) throw new NotFoundException(`Parent with id ${id} not found`);
 
     await this.prismaService.$transaction(async (tx) => {
+      await tx.studentParent.deleteMany({
+        where: { parentId: id },
+      });
       await tx.parent.delete({ where: { id } });
       await tx.user.delete({ where: { id: parent.userId } });
     });

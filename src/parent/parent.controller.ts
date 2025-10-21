@@ -16,6 +16,7 @@ import {
 } from 'src/model/parent.model';
 import { ParentResponse } from 'src/model/parent.model';
 import { WebResponse } from 'src/model/web.model';
+import { CreateStudentRequest } from 'src/model/student.model';
 
 @Controller('/api/parents')
 export class ParentController {
@@ -26,7 +27,7 @@ export class ParentController {
   async create(
     @Body() body: CreateParentRequest,
   ): Promise<WebResponse<ParentResponse>> {
-    console.log(body)
+    console.log(body);
     const result = await this.parentService.create(body);
     return {
       data: result,
@@ -40,6 +41,25 @@ export class ParentController {
     return {
       data: result,
     };
+  }
+  @Post('/with-student')
+  async createParentStudentDraft(
+    @Body()
+    body: {
+      parentRequests: CreateParentRequest[];
+      studentRequest: CreateStudentRequest;
+    },
+  ) {
+     
+    console.log(body.parentRequests);
+    console.log(body.studentRequest);
+    const res = await this.parentService.createParentStudentDraft(
+      body.parentRequests,
+      body.studentRequest,
+    );
+    return {
+      data: res
+    }
   }
 
   // ✅ READ BY ID

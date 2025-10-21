@@ -14,12 +14,31 @@ import { StudentClassHistoryModule } from './student-class-history/student-class
 import { StaffModule } from './staff/staff.module';
 import { StudentDraftModule } from './student-draft/student-draft.module';
 import { SubjectModule } from './subject/subject.module';
-import { AttendanceModule } from './attendance/attendance.module';
-import { TimeTableModule } from './time-table/time-table.module';
+// import { AttendanceModule } from './attendance/attendance.module';
+// import { TimeTableModule } from './time-table/time-table.module';
 import { AcademicYearModule } from './academic-year/academic-year.module';
 
 @Module({
-  imports: [CommonModule, UserModule, AuthModule, OrganizationModule, SchoolModule, SchoolAdminModule, StudentModule, ParentModule, StudentParentModule, TeacherModule, ClassModule, StudentClassHistoryModule, StaffModule, StudentDraftModule, SubjectModule, AttendanceModule, TimeTableModule, AcademicYearModule],
+  imports: [
+    CommonModule,
+    UserModule,
+    AuthModule,
+    OrganizationModule,
+    SchoolModule,
+    SchoolAdminModule,
+    StudentModule,
+    ParentModule,
+    StudentParentModule,
+    TeacherModule,
+    ClassModule,
+    StudentClassHistoryModule,
+    StaffModule,
+    StudentDraftModule,
+    // SubjectModule,
+    // AttendanceModule,
+    // TimeTableModule,
+    AcademicYearModule,
+  ],
   controllers: [],
   providers: [],
 })

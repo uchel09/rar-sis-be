@@ -14,6 +14,7 @@ import {
   UpdateClassRequest,
   ClassResponse,
 } from 'src/model/class.model';
+import { Grade } from 'generated/prisma';
 
 @Injectable()
 export class ClassService {
@@ -56,14 +57,6 @@ export class ClassService {
         name: createRequest.name,
         academicYearId: createRequest.academicYearId,
         grade: createRequest.grade,
-        subjectClassTeacher: createRequest.subjectClassTeacher
-          ? {
-              create: createRequest.subjectClassTeacher.map((st) => ({
-                teacherId: st.teacherId,
-                subjectId: st.subjectId,
-              })),
-            }
-          : undefined,
       },
       include: {
         academicYear: {
@@ -82,7 +75,6 @@ export class ClassService {
             },
           },
         },
-        subjectClassTeacher: true,
       },
     });
 
@@ -103,19 +95,6 @@ export class ClassService {
       grade: cls.grade,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
-      subjectClassTeacher: (
-        cls.subjectClassTeacher as {
-          id: string;
-          teacherId: string;
-          subjectId: string;
-          classId: string;
-        }[]
-      ).map((s) => ({
-        id: s.id,
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
-        classId: s.classId,
-      })),
     };
   }
 
@@ -142,7 +121,6 @@ export class ClassService {
             },
           },
         },
-        subjectClassTeacher: true,
       },
     });
 
@@ -163,19 +141,51 @@ export class ClassService {
         : undefined,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
-      subjectTeachers: (
-        cls.subjectClassTeacher as {
-          teacherId: string;
-          subjectId: string;
-          classId: string;
-          id: string;
-        }[]
-      ).map((s) => ({
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
-        classId: s.classId,
-        id: s.id,
-      })),
+    }));
+  }
+  async findAllByGrade(grade: Grade): Promise<ClassResponse[]> {
+    this.logger.info('Find all classes by Grade');
+
+    const classes = await this.prismaService.class.findMany({
+      orderBy: { name: "asc" },
+      where: { grade },
+      include: {
+        academicYear: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        homeroomTeacher: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return classes.map((cls) => ({
+      id: cls.id,
+      schoolId: cls.schoolId,
+      name: cls.name,
+      grade: cls.grade,
+      academicYear: {
+        id: cls.academicYear.id,
+        name: cls.academicYear.name,
+      },
+      homeroomTeacher: cls.homeroomTeacher
+        ? {
+            id: cls.homeroomTeacher.id,
+            fullname: cls.homeroomTeacher.user.fullName,
+          }
+        : undefined,
+      createdAt: cls.createdAt,
+      updatedAt: cls.updatedAt,
     }));
   }
 
@@ -202,7 +212,6 @@ export class ClassService {
             },
           },
         },
-        subjectClassTeacher: true,
       },
     });
 
@@ -225,19 +234,6 @@ export class ClassService {
       grade: cls.grade,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
-      subjectClassTeacher: (
-        cls.subjectClassTeacher as {
-          teacherId: string;
-          subjectId: string;
-          id: string;
-          classId: string;
-        }[]
-      ).map((s) => ({
-        id: s.id,
-        classId: s.classId,
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
-      })),
     };
   }
 
@@ -247,7 +243,6 @@ export class ClassService {
 
     const exist = await this.prismaService.class.findUnique({
       where: { id },
-      include: { subjectClassTeacher: true },
     });
 
     if (!exist) throw new NotFoundException(`Class with id ${id} not found`);
@@ -265,15 +260,6 @@ export class ClassService {
         name: updateRequest.name,
         academicYearId: updateRequest.academicYearId,
         grade: updateRequest.grade,
-        subjectClassTeacher: updateRequest.subjectTeachers
-          ? {
-              deleteMany: {}, // hapus relasi lama
-              create: updateRequest.subjectTeachers.map((st) => ({
-                teacherId: st.teacherId,
-                subjectId: st.subjectId,
-              })),
-            }
-          : undefined,
       },
       include: {
         academicYear: {
@@ -292,7 +278,6 @@ export class ClassService {
             },
           },
         },
-        subjectClassTeacher: true,
       },
     });
 
@@ -313,19 +298,6 @@ export class ClassService {
       grade: cls.grade,
       createdAt: cls.createdAt,
       updatedAt: cls.updatedAt,
-      subjectClassTeacher: (
-        cls.subjectClassTeacher as {
-          teacherId: string;
-          subjectId: string;
-          id: string;
-          classId: string;
-        }[]
-      ).map((s) => ({
-        id: s.id,
-        teacherId: s.teacherId,
-        subjectId: s.subjectId,
-        classId: s.classId,
-      })),
     };
   }
 

@@ -53,7 +53,7 @@ export class StudentDraftController {
     };
   }
   // ✅ READ ALL
-  @Get("/approve-pending")
+  @Get('/approve-pending')
   async findAllApprovedPending(): Promise<WebResponse<StudentDraftResponse[]>> {
     const result = await this.studentDraftService.findAllApprovedPending();
     return {
@@ -61,7 +61,7 @@ export class StudentDraftController {
     };
   }
   // ✅ READ ALL
-  @Get("/approved")
+  @Get('/approved')
   async findAllApproved(): Promise<WebResponse<StudentDraftResponse[]>> {
     const result = await this.studentDraftService.findAllApproved();
     return {
@@ -79,6 +79,7 @@ export class StudentDraftController {
       data: result,
     };
   }
+
 
   // ✅ UPDATE
   @Put(':id')

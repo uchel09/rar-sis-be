@@ -14,7 +14,7 @@ import {
 } from 'src/model/student-draft.model';
 import { Logger } from 'winston';
 import { StudentDraftValidation } from './student-draft.validation';
-import { Grade, DraftStatus, Gender } from 'generated/prisma';
+import {  DraftStatus, Gender } from 'generated/prisma';
 
 @Injectable()
 export class StudentDraftService {
@@ -67,6 +67,13 @@ export class StudentDraftService {
             name: true,
           },
         },
+        targetClass: {
+          select: {
+            id: true,
+            name: true,
+            grade: true,
+          },
+        },
         student: {
           select: {
             id: true,
@@ -94,7 +101,6 @@ export class StudentDraftService {
       fullName: draft.fullName,
       schoolId: draft.schoolId,
       enrollmentNumber: draft.enrollmentNumber || undefined,
-      targetClassId: draft.targetClassId || undefined,
       gender: draft.gender,
       dob: draft.dob,
       address: draft.address || undefined,
@@ -105,6 +111,13 @@ export class StudentDraftService {
             fullname: draft.student.user.fullName,
             classId: draft.student.class!.id,
             className: draft.student.class!.name,
+          }
+        : undefined,
+      targetClass: draft.targetClass
+        ? {
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
@@ -133,12 +146,19 @@ export class StudentDraftService {
 
     const drafts = await this.prismaService.studentDraft.findMany({
       orderBy: { createdAt: 'desc' },
-      where: {status: DraftStatus.PENDING},
+      where: { status: DraftStatus.PENDING },
       include: {
         academicYear: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        targetClass: {
+          select: {
+            id: true,
+            name: true,
+            grade: true
           },
         },
         student: {
@@ -187,6 +207,13 @@ export class StudentDraftService {
             fullname: draft.student.user.fullName,
             classId: draft.student.class!.id,
             className: draft.student.class!.name,
+          }
+        : undefined,
+      targetClass: draft.targetClass
+        ? {
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
@@ -205,12 +232,19 @@ export class StudentDraftService {
     const drafts = await this.prismaService.studentDraft.findMany({
       orderBy: { createdAt: 'desc' },
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      where: {status: DraftStatus.APPROVED_PENDING},
+      where: { status: DraftStatus.APPROVED_PENDING },
       include: {
         academicYear: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        targetClass: {
+          select: {
+            id: true,
+            name: true,
+            grade: true
           },
         },
         student: {
@@ -259,6 +293,13 @@ export class StudentDraftService {
             fullname: draft.student.user.fullName,
             classId: draft.student.class!.id,
             className: draft.student.class!.name,
+          }
+        : undefined,
+      targetClass: draft.targetClass
+        ? {
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
@@ -277,12 +318,19 @@ export class StudentDraftService {
     const drafts = await this.prismaService.studentDraft.findMany({
       orderBy: { createdAt: 'desc' },
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      where: {status: DraftStatus.APPROVED},
+      where: { status: DraftStatus.APPROVED },
       include: {
         academicYear: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        targetClass: {
+          select: {
+            id: true,
+            name: true,
+            grade: true
           },
         },
         student: {
@@ -333,82 +381,17 @@ export class StudentDraftService {
             className: draft.student.class!.name,
           }
         : undefined,
-      academicYear: {
-        id: draft.academicYear.id,
-        name: draft.academicYear.name,
-      },
-      draftType: draft.draftType,
-      status: draft.status,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-    }));
-  }
-
-  async findByGrade(grade: Grade): Promise<StudentDraftResponse[]> {
-    this.logger.info(`Find StudentDrafts by grade: ${grade}`);
-
-    const drafts = await this.prismaService.studentDraft.findMany({
-      where: { grade },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        academicYear: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        student: {
-          select: {
-            id: true,
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-            class: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return drafts.map((draft) => ({
-      id: draft.id,
-      email: draft.email,
-      fullName: draft.fullName,
-      schoolId: draft.schoolId,
-      targetClassId: draft.targetClassId || undefined,
-      enrollmentNumber: draft.enrollmentNumber || undefined,
-      dob: draft.dob,
-      address: draft.address || undefined,
-      grade: draft.grade,
-      gender: draft.gender,
-      student: draft.student
+      targetClass: draft.targetClass
         ? {
-            id: draft.student.id,
-            fullname: draft.student.user.fullName,
-            classId: draft.student.class!.id,
-            className: draft.student.class!.name,
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
         id: draft.academicYear.id,
         name: draft.academicYear.name,
       },
-      parents: draft.parents as {
-        id?: string;
-        fullName: string;
-        phone: string;
-        address?: string;
-        email: string;
-        nik: string;
-        gender: Gender;
-      }[],
       draftType: draft.draftType,
       status: draft.status,
       createdAt: draft.createdAt,
@@ -427,6 +410,13 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
+          },
+        },
+        targetClass: {
+          select: {
+            id: true,
+            name: true,
+            grade: true
           },
         },
         student: {
@@ -458,7 +448,6 @@ export class StudentDraftService {
       email: draft.email,
       fullName: draft.fullName,
       schoolId: draft.schoolId,
-      targetClassId: draft.targetClassId || '',
       enrollmentNumber: draft.enrollmentNumber || undefined,
       dob: draft.dob,
       address: draft.address || undefined,
@@ -470,6 +459,13 @@ export class StudentDraftService {
             fullname: draft.student.user.fullName,
             classId: draft.student.class!.id,
             className: draft.student.class!.name,
+          }
+        : undefined,
+      targetClass: draft.targetClass
+        ? {
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
@@ -517,6 +513,14 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
+
+          },
+        },
+        targetClass: {
+          select: {
+            id: true,
+            name: true,
+            grade: true,
           },
         },
         student: {
@@ -544,7 +548,6 @@ export class StudentDraftService {
       email: draft.email,
       fullName: draft.fullName,
       schoolId: draft.schoolId,
-      targetClassId: draft.targetClassId || undefined,
       enrollmentNumber: draft.enrollmentNumber || undefined,
       dob: draft.dob,
       address: draft.address || undefined,
@@ -556,6 +559,13 @@ export class StudentDraftService {
             fullname: draft.student.user.fullName,
             classId: draft.student.class!.id,
             className: draft.student.class!.name,
+          }
+        : undefined,
+      targetClass: draft.targetClass
+        ? {
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
@@ -584,13 +594,19 @@ export class StudentDraftService {
 
     const draft = await this.prismaService.studentDraft.update({
       where: { id },
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: { status: DraftStatus.APPROVED_PENDING },
       include: {
         academicYear: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        targetClass: {
+          select: {
+            id: true,
+            name: true,
+            grade: true
           },
         },
         student: {
@@ -618,7 +634,6 @@ export class StudentDraftService {
       email: draft.email,
       fullName: draft.fullName,
       schoolId: draft.schoolId,
-      targetClassId: draft.targetClassId || '',
       enrollmentNumber: draft.enrollmentNumber || undefined,
       dob: draft.dob,
       address: draft.address || undefined,
@@ -630,6 +645,13 @@ export class StudentDraftService {
             fullname: draft.student.user.fullName,
             classId: draft.student.class!.id,
             className: draft.student.class!.name,
+          }
+        : undefined,
+      targetClass: draft.targetClass
+        ? {
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
@@ -670,77 +692,11 @@ export class StudentDraftService {
             name: true,
           },
         },
-        student: {
-          select: {
-            id: true,
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-            class: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return {
-      id: draft.id,
-      email: draft.email,
-      fullName: draft.fullName,
-      schoolId: draft.schoolId,
-      targetClassId: draft.targetClassId || '',
-      enrollmentNumber: draft.enrollmentNumber || undefined,
-      dob: draft.dob,
-      address: draft.address || undefined,
-      grade: draft.grade,
-      gender: draft.gender,
-      student: draft.student
-        ? {
-            id: draft.student.id,
-            fullname: draft.student.user.fullName,
-            classId: draft.student.class!.id,
-            className: draft.student.class!.name,
-          }
-        : undefined,
-      academicYear: {
-        id: draft.academicYear.id,
-        name: draft.academicYear.name,
-      },
-      parents: draft.parents as {
-        id?: string;
-        fullName: string;
-        phone: string;
-        address?: string;
-        email: string;
-        nik: string;
-        gender: Gender;
-      }[],
-      draftType: draft.draftType,
-      status: draft.status,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-    };
-  }
-
-  // Aprove new Student ==========================================
-  async approveNewStudent(id: string): Promise<StudentDraftResponse> {
-    this.logger.info(`Approve StudentDraft ${id}`);
-
-    const draft = await this.prismaService.studentDraft.update({
-      where: { id },
-      data: { status: DraftStatus.APPROVED },
-      include: {
-        academicYear: {
+        targetClass: {
           select: {
             id: true,
             name: true,
+            grade: true,
           },
         },
         student: {
@@ -768,7 +724,6 @@ export class StudentDraftService {
       email: draft.email,
       fullName: draft.fullName,
       schoolId: draft.schoolId,
-      targetClassId: draft.targetClassId || '',
       enrollmentNumber: draft.enrollmentNumber || undefined,
       dob: draft.dob,
       address: draft.address || undefined,
@@ -780,6 +735,13 @@ export class StudentDraftService {
             fullname: draft.student.user.fullName,
             classId: draft.student.class!.id,
             className: draft.student.class!.name,
+          }
+        : undefined,
+      targetClass: draft.targetClass
+        ? {
+            id: draft.targetClass.id,
+            name: draft.targetClass.name,
+            grade: draft.targetClass.grade
           }
         : undefined,
       academicYear: {
@@ -802,86 +764,6 @@ export class StudentDraftService {
     };
   }
 
-  // Aprove new Student ==========================================
-
-  async rejectNewStudent(
-    id: string,
-    reason?: string,
-  ): Promise<StudentDraftResponse> {
-    this.logger.info(`Reject StudentDraft ${id} with reason: ${reason || '-'}`);
-
-    const draft = await this.prismaService.studentDraft.update({
-      where: { id },
-      data: {
-        status: DraftStatus.REJECTED,
-        // kalau punya field "rejectionReason", bisa tambahin disini
-        // rejectionReason: reason,
-      },
-      include: {
-        academicYear: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        student: {
-          select: {
-            id: true,
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-              },
-            },
-            class: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return {
-      id: draft.id,
-      email: draft.email,
-      fullName: draft.fullName,
-      schoolId: draft.schoolId,
-      targetClassId: draft.targetClassId || '',
-      enrollmentNumber: draft.enrollmentNumber || undefined,
-      dob: draft.dob,
-      address: draft.address || undefined,
-      grade: draft.grade,
-      gender: draft.gender,
-      student: draft.student
-        ? {
-            id: draft.student.id,
-            fullname: draft.student.user.fullName,
-            classId: draft.student.class!.id,
-            className: draft.student.class!.name,
-          }
-        : undefined,
-      academicYear: {
-        id: draft.academicYear.id,
-        name: draft.academicYear.name,
-      },
-      parents: draft.parents as {
-        id?: string;
-        fullName: string;
-        phone: string;
-        address?: string;
-        email: string;
-        nik: string;
-        gender: Gender;
-      }[],
-      draftType: draft.draftType,
-      status: draft.status,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-    };
-  }
 
   // ✅ DELETE
   async delete(id: string): Promise<{ message: string }> {

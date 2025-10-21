@@ -1,4 +1,4 @@
-import { Gender } from "generated/prisma";
+import { Gender } from 'generated/prisma';
 
 export interface CreateParentRequest {
   email: string;
@@ -7,8 +7,8 @@ export interface CreateParentRequest {
   phone: string;
   address?: string;
   nik: string;
-  gender: Gender
-  isActive: boolean
+  gender: Gender;
+  isActive: boolean;
   studentIds?: string[]; // Optional list of student IDs to link
 }
 
@@ -20,7 +20,7 @@ export interface UpdateParentRequest {
   address?: string;
   nik?: string;
   gender: Gender;
-  isActive: boolean
+  isActive: boolean;
   studentIds?: string[]; // Update linked students
 }
 
@@ -39,7 +39,7 @@ export interface ParentResponse {
     id: string;
     fullName: string;
   }[];
-  isActive: boolean
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
