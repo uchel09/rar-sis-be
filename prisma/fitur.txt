@@ -1,0 +1,14 @@
+student draft:
+- tambahkan uang pendaftaran nanti
+
+
+student dan student class history:
+- tambahkan relasi ke Rapor
+
+attendance:
+- hapus attendance pertahun ajaran sebelum ppdb
+
+
+TK SD SMP SMA di kolom student, student draft bakend
+TK SD SMP SMA di kolom student, 
+student draft frontend dan pisahkan disidebar sendiri untuk ppdb

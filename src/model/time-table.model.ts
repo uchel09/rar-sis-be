@@ -1,48 +1,43 @@
-import { Semester, DayOfWeek } from 'generated/prisma';
+import { DayOfWeek, Grade } from 'generated/prisma';
 
 export interface CreateTimetableRequest {
   schoolId: string;
-  subjectClassTeacherId: string;
-  academicYearId: string;
-  semester: Semester;
+  subjectTeacherid?: string;
+  classId: string;
   dayOfWeek: DayOfWeek;
   startTime: string; // HH:mm
   endTime: string; // HH:mm
-  isActive: boolean
+  isActive: boolean;
 }
 
 export interface UpdateTimetableRequest {
-  subjectClassTeacherId: string;
+  subjectTeacherid: string;
+  classId?: string;
   dayOfWeek?: DayOfWeek;
   startTime?: string;
   endTime?: string;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 export interface TimetableResponse {
   id: string;
-  schoolId: string;
   classId: string;
-  subjectId: string;
-  teacherId: string;
-  semester: Semester;
   dayOfWeek: DayOfWeek;
-  startTime: Date;
-  endTime: Date;
-  subjectClassTeacher:{
+  startTime: string;
+  endTime: string;
+  class?: {
     id: string;
-    classId: string;
-    className: string;
+    name: string;
+    grade: Grade;
+  } | null;
+  subjectTeacher?: {
+    id: string;
     teacherId: string;
     teacherFullname: string;
     subjectId: string;
     subjectName: string;
-  }
+  } | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-
-  class?: { id: string; name: string };
-  subject?: { id: string; name: string };
-  teacher?: { id: string; fullName: string };
 }

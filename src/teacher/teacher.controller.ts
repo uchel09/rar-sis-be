@@ -31,6 +31,13 @@ export class TeacherController {
       data: result,
     };
   }
+  @Post("/dummy")
+  async create20DummyTeacher(): Promise<WebResponse<any>> {
+    const result = await this.teacherService.create20DummyTeacher();
+    return {
+      data: result,
+    };
+  }
 
   // ✅ READ ALL
   @Get()
@@ -47,9 +54,9 @@ export class TeacherController {
     @Param('id') id: string,
   ): Promise<WebResponse<TeacherResponse>> {
     const result = await this.teacherService.findById(id);
-     return {
-       data: result,
-     };
+    return {
+      data: result,
+    };
   }
 
   // ✅ UPDATE
@@ -59,9 +66,9 @@ export class TeacherController {
     @Body() data: UpdateTeacherRequest,
   ): Promise<WebResponse<TeacherResponse>> {
     const result = await this.teacherService.update(id, data);
-     return {
-       data: result,
-     };
+    return {
+      data: result,
+    };
   }
 
   // ✅ DELETE

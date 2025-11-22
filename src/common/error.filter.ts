@@ -29,11 +29,24 @@ export class ErrorFilter implements ExceptionFilter {
         })),
       });
     } else {
+      // 🧩 Deteksi jika error dari Prisma (biasanya punya code PXXXX)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unused-vars
+      const isPrismaError =
+        typeof exception === 'object' &&
+        exception !== null &&
+        'code' in exception &&
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        (exception as any).code?.startsWith('P');
+
+      // 🧾 Log ke console agar developer tahu apa yang sebenarnya terjadi
+      if (exception instanceof Error) {
+        console.error('🔥 Prisma/SQL Error:', exception.message);
+      } else {
+        console.error('🔥 Unknown error:', exception);
+      }
+
       response.status(500).json({
-        errors:
-          exception instanceof Error
-            ? exception.message
-            : 'Internal server error',
+        errors: 'Internal server error', // 🚫 tetap aman di sisi client
       });
     }
   }

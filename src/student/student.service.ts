@@ -102,9 +102,10 @@ export class StudentService {
   }
 
   // ✅ READ ALL
-  async findAllStudentByClassId(classId: string): Promise<StudentResponse[]> {
+  async findAllStudentByClassId(id: string): Promise<StudentResponse[]> {
+    console.log(id)
     const students = await this.prismaService.student.findMany({
-      where: { classId: classId },
+      where: { classId:id },
       include: {
         user: true,
         class: true,
@@ -112,7 +113,6 @@ export class StudentService {
       },
       orderBy: { user: { fullName: 'desc' } },
     });
-
     return students.map((s) => ({
       id: s.id,
       schoolId: s.schoolId,

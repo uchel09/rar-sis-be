@@ -14,16 +14,60 @@ import {
 } from 'src/model/student-draft.model';
 import { Logger } from 'winston';
 import { StudentDraftValidation } from './student-draft.validation';
-import {  DraftStatus, Gender } from 'generated/prisma';
+import { DraftStatus, DraftType, Gender, Grade } from 'generated/prisma';
 
 @Injectable()
 export class StudentDraftService {
+  prisma: any;
   constructor(
     private validationService: VallidationService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private prismaService: PrismaService,
   ) {}
 
+  async create50Dummy() {
+    const data = Array.from({ length: 50 }).map((_, i) => ({
+      email: `student${i + 1}@example.com`,
+      fullName: `Student ${i + 1}`,
+      schoolId: 'a352d11d-3407-4a71-a299-031e3d22c5c8',
+      academicYearId: 'f1c8a8ce-e101-462b-98e6-c481a5ff77f4',
+      targetClassId: null,
+      studentId: null,
+      enrollmentNumber: `ENR-${(1000 + i + 1).toString().padStart(4, '0')}`,
+      dob: new Date(2015, 0, 1 + i),
+      address: `Jl. Pendidikan No.${i + 1}, Jayapura`,
+      gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+      grade: Grade.GRADE_7,
+      draftType: DraftType.NEW_ENROLLMENT, // ✅ gunakan enum, bukan string
+      status: DraftStatus.PENDING,
+      createdBy: 'system',
+      verifiedBy: null,
+      verifiedAt: null,
+      rejectionReason: null,
+      parents: [
+        {
+          fullName: `Orang Tua ${i + 1}`,
+          phone: `081234567${(i + 1).toString().padStart(2, '0')}`,
+          email: `parent${i + 1}@example.com`,
+          gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+          nik: `9876543210${(i + 1).toString().padStart(2, '0')}`,
+        },
+      ], // ✅ kalau kolom parents adalah JSON
+    }));
+
+    const result = await this.prismaService.studentDraft.createMany({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      data: data as any, // 👈 cast aman agar Prisma terima array besar
+    });
+
+    return {
+      message: `✅ Berhasil membuat ${result.count} StudentDraft dummy`,
+      count: result.count,
+    };
+  }
+  async deleteSider(){
+    await this.prismaService.studentDraft.deleteMany({});
+  }
   // ✅ CREATE
   async create(
     request: CreateStudentDraftRequest,
@@ -117,7 +161,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -158,7 +202,7 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
-            grade: true
+            grade: true,
           },
         },
         student: {
@@ -213,7 +257,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -244,7 +288,7 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
-            grade: true
+            grade: true,
           },
         },
         student: {
@@ -299,7 +343,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -330,7 +374,7 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
-            grade: true
+            grade: true,
           },
         },
         student: {
@@ -385,7 +429,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -416,7 +460,7 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
-            grade: true
+            grade: true,
           },
         },
         student: {
@@ -465,7 +509,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -513,7 +557,6 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
-
           },
         },
         targetClass: {
@@ -565,7 +608,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -606,7 +649,7 @@ export class StudentDraftService {
           select: {
             id: true,
             name: true,
-            grade: true
+            grade: true,
           },
         },
         student: {
@@ -651,7 +694,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -741,7 +784,7 @@ export class StudentDraftService {
         ? {
             id: draft.targetClass.id,
             name: draft.targetClass.name,
-            grade: draft.targetClass.grade
+            grade: draft.targetClass.grade,
           }
         : undefined,
       academicYear: {
@@ -763,7 +806,6 @@ export class StudentDraftService {
       updatedAt: draft.updatedAt,
     };
   }
-
 
   // ✅ DELETE
   async delete(id: string): Promise<{ message: string }> {

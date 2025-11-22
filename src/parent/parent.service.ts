@@ -15,7 +15,7 @@ import {
   UpdateParentRequest,
   ParentResponse,
 } from 'src/model/parent.model';
-import { Role, Prisma } from 'generated/prisma';
+import { Role, Prisma, DraftStatus } from 'generated/prisma';
 import { CreateStudentRequest } from 'src/model/student.model';
 import { StudentValidation } from 'src/student/student.validation';
 
@@ -91,6 +91,7 @@ export class ParentService {
     });
   }
   async createParentStudentDraft(
+    studentDraftId: string,
     parentRequests: CreateParentRequest[],
     studentRequest: CreateStudentRequest,
   ): Promise<any> {
@@ -111,16 +112,13 @@ export class ParentService {
       );
 
     // ✅ Jalankan semua logika di dalam satu transaksi
-    await this.prismaService.$transaction(async (tx) => {
+    const result = await this.prismaService.$transaction(async (tx) => {
       const parentIds: string[] = [];
 
       // 🔁 Loop semua parent
       for (const p of validatedParentRequests) {
-        // 🔍 Cek apakah parent sudah ada berdasarkan NIK atau email user
         const existingParent = await tx.parent.findFirst({
-          where: {
-            OR: [{ nik: p.nik }, { user: { email: p.email } }],
-          },
+          where: { OR: [{ nik: p.nik }, { user: { email: p.email } }] },
           include: { user: true },
         });
 
@@ -129,7 +127,6 @@ export class ParentService {
           continue;
         }
 
-        // 🔐 Buat user dan parent baru
         const hashedPassword = await bcrypt.hash(p.password, 10);
         const userParent = await tx.user.create({
           data: {
@@ -159,7 +156,6 @@ export class ParentService {
         createStudentRequest.password,
         10,
       );
-
       const userStudent = await tx.user.create({
         data: {
           email: createStudentRequest.email,
@@ -190,6 +186,15 @@ export class ParentService {
         })),
       });
 
+      // 🔗 Update studentDraft → studentId & status APPROVED
+      await tx.studentDraft.update({
+        where: { id: studentDraftId },
+        data: {
+          studentId: studentRes.id,
+          status: DraftStatus.APPROVED,
+        },
+      });
+      console.log(studentDraftId)
       return {
         message: 'Parent dan Student berhasil dibuat dalam satu transaksi',
         studentId: studentRes.id,
@@ -197,7 +202,7 @@ export class ParentService {
       };
     });
 
-    return { message: 'approve berhasil' };
+    return result; // <-- dikembalikan ke controller
   }
 
   // ✅ READ ALL

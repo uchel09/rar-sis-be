@@ -73,7 +73,6 @@ enum DayOfWeek {
   THURSDAY
   FRIDAY
   SATURDAY
-  SUNDAY
 }
 
 // untuk student class history
@@ -87,8 +86,23 @@ enum Gender {
   MALE
   FEMALE
 }
+enum Jurusan {
+  IPA
+  IPS
+}
+
+// enum Level {
+//   TK
+//   PAUD
+//   SD
+//   SMP
+//   SMA
+// }
 
 enum Grade {
+  // PAUD
+  // TK_0
+  // TK_00
   // SD
   GRADE_1
   GRADE_2
@@ -195,7 +209,7 @@ model Student {
   parents               StudentParent[]
   studentClassHistories StudentClassHistory[]
   attendances           Attendance[]
-  studentDrafts         StudentDraft[]
+  studentDraft          StudentDraft?
 }
 
 model StudentDraft {
@@ -204,7 +218,7 @@ model StudentDraft {
   fullName         String
   schoolId         String
   academicYearId   String
-  studentId        String?
+  studentId        String?     @unique
   targetClassId    String?
   enrollmentNumber String?     @unique
   dob              DateTime
@@ -299,6 +313,7 @@ model Class {
   homeroomTeacherId String?
   name              String
   academicYearId    String
+  Jurusan           Jurusan? //IPA, IPS berlaku untuk SMA aja
   grade             Grade
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -363,23 +378,20 @@ model Attendance {
 }
 
 model Timetable {
-  id                    String    @id @default(uuid())
-  schoolId              String
+  id               String    @id @default(uuid())
+  schoolId         String
   subjectTeacherid String?   @map("subject_teacher_id")
-  classId               String
-  semester              Semester
-  dayOfWeek             DayOfWeek
-  startTime             DateTime
-  endTime               DateTime
-  academicYearId        String
-  isActive              Boolean
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  classId          String
+  dayOfWeek        DayOfWeek
+  startTime        DateTime
+  endTime          DateTime
+  isActive         Boolean
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  academicYear        AcademicYear    @relation(fields: [academicYearId], references: [id])
-  school              School          @relation(fields: [schoolId], references: [id])
-  class               Class           @relation(fields: [classId], references: [id])
-  attendances         Attendance[]
+  school         School          @relation(fields: [schoolId], references: [id])
+  class          Class           @relation(fields: [classId], references: [id])
+  attendances    Attendance[]
   subjectTeacher SubjectTeacher? @relation(fields: [subjectTeacherid], references: [id])
 }
 
@@ -387,6 +399,8 @@ model SubjectTeacher {
   id        String @id @default(uuid())
   subjectId String
   teacherId String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   subject    Subject     @relation(fields: [subjectId], references: [id])
   teacher    Teacher     @relation(fields: [teacherId], references: [id])
@@ -407,8 +421,20 @@ model AcademicYear {
   studentDrafts         StudentDraft[]
   studentClassHistories StudentClassHistory[]
 
-  timetables Timetable[]
+
+  // AcademicYearQuota AcademicYearQuota[]
 }
+
+// model AcademicYearQuota {
+//   id             String   @id @default(uuid())
+//   academicYearId String
+//   Name           String //PAUD, TK, SD, SMP,SMA
+//   quota          Int
+//   createdAt      DateTime @default(now())
+//   updatedAt      DateTime @updatedAt
+
+//   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+// }
 
 // =================================== Gambaran Fitur Lanjutan ====================================
 // model EmployeeAttendance {

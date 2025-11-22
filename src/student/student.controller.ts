@@ -32,7 +32,6 @@ export class StudentController {
       request,
       ['enrollmentNumber', 'address', 'classId'],
     );
-    console.log(request);
     const result = await this.studentService.create(normalizedRequest);
     return {
       data: result,

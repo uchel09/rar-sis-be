@@ -46,20 +46,22 @@ export class ParentController {
   async createParentStudentDraft(
     @Body()
     body: {
+      studentDraftId: string;
       parentRequests: CreateParentRequest[];
       studentRequest: CreateStudentRequest;
     },
   ) {
-     
-    console.log(body.parentRequests);
-    console.log(body.studentRequest);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const res = await this.parentService.createParentStudentDraft(
+      body.studentDraftId,
       body.parentRequests,
       body.studentRequest,
     );
+
     return {
-      data: res
-    }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      data: res,
+    };
   }
 
   // ✅ READ BY ID

@@ -15,8 +15,9 @@ import { StaffModule } from './staff/staff.module';
 import { StudentDraftModule } from './student-draft/student-draft.module';
 import { SubjectModule } from './subject/subject.module';
 // import { AttendanceModule } from './attendance/attendance.module';
-// import { TimeTableModule } from './time-table/time-table.module';
+import { TimeTableModule } from './time-table/time-table.module';
 import { AcademicYearModule } from './academic-year/academic-year.module';
+import { SubjectTeacherModule } from './subject-teacher/subject-teacher.module';
 
 @Module({
   imports: [
@@ -34,10 +35,11 @@ import { AcademicYearModule } from './academic-year/academic-year.module';
     StudentClassHistoryModule,
     StaffModule,
     StudentDraftModule,
-    // SubjectModule,
+    SubjectModule,
     // AttendanceModule,
-    // TimeTableModule,
+    TimeTableModule,
     AcademicYearModule,
+    SubjectTeacherModule,
   ],
   controllers: [],
   providers: [],

@@ -1,6 +1,9 @@
 import { z } from 'zod';
-import { Semester, DayOfWeek } from 'generated/prisma';
+import { DayOfWeek } from 'generated/prisma';
 
+// ======================
+// 🔧 Helper Functions
+// ======================
 function isValidTimeFormat(time: string): boolean {
   return /^([0-1]\d|2[0-3]):([0-5]\d)$/.test(time);
 }
@@ -10,17 +13,21 @@ function isEndTimeAfterStart(startTime: string, endTime: string): boolean {
     return false;
   const [sh, sm] = startTime.split(':').map(Number);
   const [eh, em] = endTime.split(':').map(Number);
-  return eh * 60 + em > sh * 60 + sm; // konversi ke menit lalu bandingkan
+  return eh * 60 + em > sh * 60 + sm;
 }
 
+// ======================
+// 🧩 Validation Schema
+// ======================
 export class TimetableValidation {
   static readonly CREATE = z
     .object({
       schoolId: z.uuid({ message: 'schoolId harus UUID' }),
+      subjectTeacherid: z
+
+        .uuid({ message: 'subjectTeacherid harus UUID' })
+        .optional(), // karena di interface optional
       classId: z.uuid({ message: 'classId harus UUID' }),
-      subjectId: z.uuid({ message: 'subjectId harus UUID' }),
-      teacherId: z.uuid({ message: 'teacherId harus UUID' }),
-      semester: z.enum(Semester, { message: 'semester tidak valid' }),
       dayOfWeek: z.enum(DayOfWeek, { message: 'dayOfWeek tidak valid' }),
       startTime: z.string().regex(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
         message: 'format startTime harus HH:mm',
@@ -37,9 +44,11 @@ export class TimetableValidation {
 
   static readonly UPDATE = z
     .object({
-      teacherId: z.uuid({ message: 'teacherId harus UUID' }).optional(),
+      subjectTeacherid: z
+        .uuid({ message: 'subjectTeacherId harus UUID' }),
+      classId: z.uuid({ message: 'classId harus UUID' }).optional(),
       dayOfWeek: z
-        .enum(DayOfWeek, { message: 'dayOfWeek tidak valid' })
+        .nativeEnum(DayOfWeek, { message: 'dayOfWeek tidak valid' })
         .optional(),
       startTime: z
         .string()

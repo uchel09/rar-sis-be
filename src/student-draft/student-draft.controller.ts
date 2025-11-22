@@ -19,7 +19,14 @@ import { UtilService } from 'src/common/util.service';
 @Controller('/api/student-drafts')
 export class StudentDraftController {
   constructor(private readonly studentDraftService: StudentDraftService) {}
-
+  @Post('sider')
+  async create50Dummy() {
+    return this.studentDraftService.create50Dummy();
+  }
+  @Delete('delete-sider')
+  async deleteDummy() {
+    return this.studentDraftService.deleteSider();
+  }
   // ✅ CREATE
   @Post()
   async create(
@@ -37,7 +44,7 @@ export class StudentDraftController {
         'verifiedAt',
       ],
     );
-    console.log(normalizedRequest);
+
     const result = await this.studentDraftService.create(normalizedRequest);
     return {
       data: result,
@@ -80,14 +87,12 @@ export class StudentDraftController {
     };
   }
 
-
   // ✅ UPDATE
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Body() request: UpdateStudentDraftRequest,
   ): Promise<WebResponse<StudentDraftResponse>> {
-    console.log(request);
     const result = await this.studentDraftService.update(id, request);
     return {
       data: result,

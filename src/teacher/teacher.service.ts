@@ -14,7 +14,7 @@ import {
   UpdateTeacherRequest,
   TeacherResponse,
 } from 'src/model/teacher.model';
-import { Role } from 'generated/prisma';
+import { Gender, Role } from 'generated/prisma';
 import * as bcrypt from 'bcrypt';
 import { Prisma } from 'generated/prisma';
 
@@ -25,6 +25,46 @@ export class TeacherService {
     private validationService: VallidationService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
   ) {}
+
+  async create20DummyTeacher() {
+    let count = 0;
+    const hashedPassword = await bcrypt.hash('guru123456', 10);
+    for (let i = 0; i < 20; i++) {
+      await this.prismaService.$transaction(async (prisma) => {
+        // 1️⃣ Buat user dulu
+        const user = await prisma.user.create({
+          data: {
+            email: `teacher${i + 1}@example.com`,
+            password: hashedPassword, // ubah kalau mau real hash
+            fullName: `Guru ${i + 1}`,
+            role: Role.TEACHER,
+            gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+          },
+        });
+
+        // 2️⃣ Buat teacher yang terhubung ke user
+        await prisma.teacher.create({
+          data: {
+            userId: user.id,
+            schoolId: 'a352d11d-3407-4a71-a299-031e3d22c5c8',
+            nik: `9876543210${(i + 1).toString().padStart(2, '0')}`,
+            nip: `19851231${(1000 + i + 1).toString().padStart(4, '0')}`,
+            hireDate: new Date(2020, 0, 1 + i),
+            dob: new Date(1990, 0, 1 + i),
+            phone: `081234567${(i + 1).toString().padStart(2, '0')}`,
+            isActive: true,
+          },
+        });
+      });
+
+      count++;
+    }
+
+    return {
+      message: `✅ Berhasil membuat ${count} data dummy Teacher + User`,
+      count,
+    };
+  }
 
   // ✅ CREATE Teacher (sekalian create User)
   async create(request: CreateTeacherRequest): Promise<TeacherResponse> {
