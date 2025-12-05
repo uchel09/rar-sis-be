@@ -26,8 +26,6 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   SICK
-  PERMISSION
-  LATE
   EXCUSED
 }
 
@@ -86,6 +84,7 @@ enum Gender {
   MALE
   FEMALE
 }
+
 enum Jurusan {
   IPA
   IPS
@@ -208,8 +207,8 @@ model Student {
 
   parents               StudentParent[]
   studentClassHistories StudentClassHistory[]
-  attendances           Attendance[]
   studentDraft          StudentDraft?
+  attendanceDetails     AttendanceDetail[]
 }
 
 model StudentDraft {
@@ -359,22 +358,30 @@ model Subject {
 
 model Attendance {
   id          String           @id @default(uuid())
-  studentId   String
   timetableId String
   schoolId    String
   date        DateTime
   semester    Semester
-  status      AttendanceStatus
-  note        String?
   approve     Boolean
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  student   Student   @relation(fields: [studentId], references: [id])
   school    School    @relation(fields: [schoolId], references: [id])
   timetable Timetable @relation(fields: [timetableId], references: [id])
 
-  @@unique([studentId, timetableId, date])
+  attendanceDetails AttendanceDetail[]
+}
+
+model AttendanceDetail {
+  id           String           @id @default(uuid())
+  attendanceId String
+  studentId    String
+  status       AttendanceStatus // hadir/sakit/izin/alpa
+  note         String?
+
+  // Relasi
+  attendance Attendance @relation(fields: [attendanceId], references: [id])
+  student    Student    @relation(fields: [studentId], references: [id])
 }
 
 model Timetable {
@@ -396,11 +403,11 @@ model Timetable {
 }
 
 model SubjectTeacher {
-  id        String @id @default(uuid())
+  id        String   @id @default(uuid())
   subjectId String
   teacherId String
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   subject    Subject     @relation(fields: [subjectId], references: [id])
   teacher    Teacher     @relation(fields: [teacherId], references: [id])
@@ -421,9 +428,15 @@ model AcademicYear {
   studentDrafts         StudentDraft[]
   studentClassHistories StudentClassHistory[]
 
-
   // AcademicYearQuota AcademicYearQuota[]
 }
+// model Holiday {
+//   id        String   @id @default(uuid())
+//   schoolId  String
+//   date      DateTime
+//   title     String
+// }
+
 
 // model AcademicYearQuota {
 //   id             String   @id @default(uuid())

@@ -1,271 +1,234 @@
-// import {
-//   HttpException,
-//   Injectable,
-//   NotFoundException,
-//   Inject,
-// } from '@nestjs/common';
-// import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-// import { PrismaService } from 'src/common/prisma.service';
-// import { VallidationService } from 'src/common/validation.service';
-// import { Logger } from 'winston';
-// import { AttendanceValidation } from './attendance.validation';
-// import {
-//   CreateAttendanceRequest,
-//   UpdateAttendanceRequest,
-//   AttendanceResponse,
-// } from 'src/model/attendance.model';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import {
+  Injectable,
+  HttpException,
+  NotFoundException,
+  Inject,
+} from '@nestjs/common';
+import { PrismaService } from 'src/common/prisma.service';
+import { VallidationService } from 'src/common/validation.service';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
+import { AttendanceValidation } from './attendance.validation';
+import {
+  CreateAttendanceRequest,
+  UpdateAttendanceRequest,
+  AttendanceResponse,
+  AttendanceBulkResponse,
+  AttendanceItem,
+} from 'src/model/attendance.model';
+import { AttendanceStatus, DayOfWeek, Semester } from 'generated/prisma';
 
-// @Injectable()
-// export class AttendanceService {
-//   constructor(
-//     private validationService: VallidationService,
-//     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
-//     private prismaService: PrismaService,
-//   ) {}
+@Injectable()
+export class AttendanceService {
+  constructor(
+    private prismaService: PrismaService,
+    private validationService: VallidationService,
+    @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
+  ) {}
 
-//   // ✅ BULK CREATE
-//   async createBulk(
-//     requests: CreateAttendanceRequest[],
-//   ): Promise<AttendanceResponse[]> {
-//     this.logger.info(`Create bulk attendance ${JSON.stringify(requests)}`);
+  private dayMap: Record<DayOfWeek, number> = {
+    MONDAY: 1,
+    TUESDAY: 2,
+    WEDNESDAY: 3,
+    THURSDAY: 4,
+    FRIDAY: 5,
+    SATURDAY: 6,
+  };
 
-//     const validatedRequests = requests.map((r) =>
-//       this.validationService.validate(AttendanceValidation.CREATE, r),
-//     );
+  async createBulkAttendanceForClassSubjectTeacher(
+    classId: string,
+    subjectTeacherid: string,
+    semester: Semester,
+  ) {
+    // ==========================
+    // 1. Tentukan range semester
+    // ==========================
+    const year = new Date().getFullYear();
 
-//     // Cek duplikat
-//     for (const req of validatedRequests) {
-//       const exist = await this.prismaService.attendance.count({
-//         where: {
-//           studentId: req.studentId,
-//           timetableId: req.timetableId,
-//           date: new Date(req.date),
-//         },
-//       });
-//       if (exist > 0) {
-//         throw new HttpException(
-//           `Attendance already exists for student ${req.studentId} on timetable ${req.timetableId}`,
-//           400,
-//         );
-//       }
-//     }
+    const semesterRange = {
+      SEMESTER_1: {
+        start: new Date(`${year}-07-01`),
+        end: new Date(`${year}-12-31`),
+      },
+      SEMESTER_2: {
+        start: new Date(`${year}-01-01`),
+        end: new Date(`${year}-06-30`),
+      },
+    };
 
-//     const attendances = await this.prismaService.$transaction(
-//       validatedRequests.map((r) =>
-//         this.prismaService.attendance.create({
-//           data: {
-//             studentId: r.studentId,
-//             timetableId: r.timetableId,
-//             schoolId: r.schoolId,
-//             date: r.date,
-//             semester: r.semester,
-//             status: r.status,
-//             note: r.note || null,
-//           },
-//           include: {
-//             timetable: {
-//               include: {
-//                 academicYear: {
-//                   select: { id: true, name: true },
-//                 },
-//                 subjectClassTeacher: {
-//                   include: {
-//                     subject: { select: { id: true, name: true } },
-//                     class: { select: { id: true, name: true } },
-//                     teacher: {
-//                       include: {
-//                         user: { select: { id: true, fullName: true } },
-//                       },
-//                     },
-//                   },
-//                 },
-//               },
-//             },
-//           },
-//         }),
-//       ),
-//     );
+    const { start, end } = semesterRange[semester];
 
-//     return attendances.map((att) => ({
-//       id: att.id,
-//       studentId: att.studentId,
-//       timetableId: att.timetableId,
-//       schoolId: att.schoolId,
-//       date: att.date.toISOString(),
-//       semester: att.semester,
-//       status: att.status,
-//       note: att.note || undefined,
-//       approve: att.approve,
-//       createdAt: att.createdAt.toISOString(),
-//       updatedAt: att.updatedAt.toISOString(),
-//       timetable: {
-//         id: att.timetable.id,
-//         dayOfWeek: att.timetable.dayOfWeek,
-//         startTime: att.timetable.startTime,
-//         endTime: att.timetable.endTime,
-//         academicYear: {
-//           id: att.timetable.academicYear.id,
-//           name: att.timetable.academicYear.name,
-//         },
-//         subjectClassTeacher: {
-//           id: att.timetable.subjectClassTeacher.id,
-//           subject: att.timetable.subjectClassTeacher.subject,
-//           class: att.timetable.subjectClassTeacher.class,
-//           teacher: {
-//             id: att.timetable.subjectClassTeacher.teacher.id,
-//             user: att.timetable.subjectClassTeacher.teacher.user,
-//           },
-//         },
-//       },
-//     }));
-//   }
+    // ==========================
+    // 2. Ambil semua timetable kelas + guru
+    // ==========================
+    const timetables = await this.prismaService.timetable.findMany({
+      where: {
+        classId,
+        subjectTeacherid,
+      },
+    });
 
-//   // ✅ BULK UPDATE
-//   async updateBulk(
-//     updates: { id: string; data: UpdateAttendanceRequest }[],
-//   ): Promise<AttendanceResponse[]> {
-//     this.logger.info(`Update bulk attendance ${JSON.stringify(updates)}`);
+    if (timetables.length === 0) {
+      throw new Error(
+        'Class ini tidak memiliki timetable untuk subjectTeacher tersebut.',
+      );
+    }
 
-//     const results: AttendanceResponse[] = [];
+    const resultToCreate: any[] = [];
 
-//     for (const { id, data } of updates) {
-//       const exist = await this.prismaService.attendance.findUnique({
-//         where: { id },
-//       });
-//       if (!exist)
-//         throw new NotFoundException(`Attendance with id ${id} not found`);
+    // ==========================
+    // 3. Loop semua tanggal semester
+    // ==========================
+    for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+      const dayName = dt
+        .toLocaleString('en-US', { weekday: 'long' })
+        .toUpperCase();
 
-//       const validated = this.validationService.validate(
-//         AttendanceValidation.UPDATE,
-//         data,
-//       );
+      // Ambil semua timetable yg hari nya cocok
+      const todaysTT = timetables.filter((tt) => tt.dayOfWeek === dayName);
+      if (todaysTT.length === 0) continue;
 
-//       const updated = await this.prismaService.attendance.update({
-//         where: { id },
-//         data: validated,
-//         include: {
-//           timetable: {
-//             include: {
-//               academicYear: { select: { id: true, name: true } },
-//               subjectClassTeacher: {
-//                 include: {
-//                   subject: { select: { id: true, name: true } },
-//                   class: { select: { id: true, name: true } },
-//                   teacher: {
-//                     include: {
-//                       user: { select: { id: true, fullName: true } },
-//                     },
-//                   },
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       });
+      // ==========================
+      // 4. Tambahkan attendance
+      // ==========================
+      for (const tt of todaysTT) {
+        resultToCreate.push({
+          timetableId: tt.id,
+          schoolId: tt.schoolId,
+          date: new Date(dt),
+          semester,
+          approve: false,
+        });
+      }
+    }
 
-//       results.push({
-//         id: updated.id,
-//         studentId: updated.studentId,
-//         timetableId: updated.timetableId,
-//         schoolId: updated.schoolId,
-//         date: updated.date.toISOString(),
-//         semester: updated.semester,
-//         status: updated.status,
-//         note: updated.note || undefined,
-//         approve: updated.approve,
-//         createdAt: updated.createdAt.toISOString(),
-//         updatedAt: updated.updatedAt.toISOString(),
-//         timetable: {
-//           id: updated.timetable.id,
-//           dayOfWeek: updated.timetable.dayOfWeek,
-//           startTime: updated.timetable.startTime,
-//           endTime: updated.timetable.endTime,
-//           academicYear: {
-//             id: updated.timetable.academicYear.id,
-//             name: updated.timetable.academicYear.name,
-//           },
-//           subjectClassTeacher: {
-//             id: updated.timetable.subjectClassTeacher.id,
-//             subject: updated.timetable.subjectClassTeacher.subject,
-//             class: updated.timetable.subjectClassTeacher.class,
-//             teacher: {
-//               id: updated.timetable.subjectClassTeacher.teacher.id,
-//               user: updated.timetable.subjectClassTeacher.teacher.user,
-//             },
-//           },
-//         },
-//       });
-//     }
+    // ==========================
+    // 5. Create bulk attendance
+    // ==========================
+    await this.prismaService.attendance.createMany({
+      data: resultToCreate,
+      skipDuplicates: true,
+    });
 
-//     return results;
-//   }
+    return {
+      created: resultToCreate.length,
+      range: { start, end },
+      message: 'Bulk attendance created for class + subjectTeacher',
+    };
+  }
 
-//   // ✅ FIND ALL BY TIMETABLE + DATE
-//   async findAllByTimetableAndDate(
-//     timetableId: string,
-//     date: Date,
-//   ): Promise<AttendanceResponse[]> {
-//     this.logger.info(
-//       `Find attendance by timetable ${timetableId} and date ${date}`,
-//     );
+  async deleteBulkAttendanceForClassSubjectTeacher(
+    classId: string,
+    subjectTeacherId: string,
+    semester: Semester,
+  ) {
+    // ==========================
+    // 1. Ambil semua timetable class + subjectTeacher
+    // ==========================
+    const timetables = await this.prismaService.timetable.findMany({
+      where: {
+        classId,
+        subjectTeacherid: subjectTeacherId,
+      },
+      select: { id: true },
+    });
 
-//     const attendances = await this.prismaService.attendance.findMany({
-//       where: {
-//         timetableId,
-//         date,
-//       },
-//       include: {
-//         timetable: {
-//           include: {
-//             academicYear: { select: { id: true, name: true } },
-//             subjectClassTeacher: {
-//               include: {
-//                 subject: { select: { id: true, name: true } },
-//                 class: { select: { id: true, name: true } },
-//                 teacher: {
-//                   include: {
-//                     user: { select: { id: true, fullName: true } },
-//                   },
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       },
-//       orderBy: { studentId: 'asc' },
-//     });
+    if (timetables.length === 0) {
+      throw new Error(
+        'Tidak ada timetable untuk class + subjectTeacher tersebut.',
+      );
+    }
 
-//     return attendances.map((att) => ({
-//       id: att.id,
-//       studentId: att.studentId,
-//       timetableId: att.timetableId,
-//       schoolId: att.schoolId,
-//       date: att.date.toISOString(),
-//       semester: att.semester,
-//       status: att.status,
-//       note: att.note || undefined,
-//       approve: att.approve,
-//       createdAt: att.createdAt.toISOString(),
-//       updatedAt: att.updatedAt.toISOString(),
-//       timetable: {
-//         id: att.timetable.id,
-//         dayOfWeek: att.timetable.dayOfWeek,
-//         startTime: att.timetable.startTime,
-//         endTime: att.timetable.endTime,
-//         academicYear: {
-//           id: att.timetable.academicYear.id,
-//           name: att.timetable.academicYear.name,
-//         },
-//         subjectClassTeacher: {
-//           id: att.timetable.subjectClassTeacher.id,
-//           subject: att.timetable.subjectClassTeacher.subject,
-//           class: att.timetable.subjectClassTeacher.class,
-//           teacher: {
-//             id: att.timetable.subjectClassTeacher.teacher.id,
-//             user: att.timetable.subjectClassTeacher.teacher.user,
-//           },
-//         },
-//       },
-//     }));
-//   }
-// }
+    const timetableIds = timetables.map((t) => t.id);
+
+    // ==========================
+    // 2. Hapus semua attendance berdasarkan semester + timetableIds
+    // ==========================
+
+    const deleted = await this.prismaService.attendance.deleteMany({
+      where: {
+        timetableId: { in: timetableIds },
+        semester: semester,
+      },
+    });
+
+    return {
+      deleted: deleted.count,
+      message: 'Bulk attendance deleted successfully',
+      classId,
+      subjectTeacherId,
+      semester,
+    };
+  }
+
+  async getBulkAttendanceForClassSubjectTeacher(
+    classId: string,
+    subjectTeacherId: string,
+    semester: Semester,
+  ): Promise<AttendanceBulkResponse> {
+    const timetables = await this.prismaService.timetable.findMany({
+      where: {
+        classId,
+        subjectTeacherid: subjectTeacherId,
+      },
+    });
+
+    if (timetables.length === 0) {
+      throw new Error(
+        'Tidak ditemukan timetable untuk class dan subjectTeacher tersebut.',
+      );
+    }
+    const subjectTeacherDetail =
+      await this.prismaService.subjectTeacher.findFirst({
+        where: { id: subjectTeacherId },
+        include: {
+          subject: true,
+          teacher: {
+            include: { user: true }
+          },
+        },
+      });
+
+    const timetableIds = timetables.map((tt) => tt.id);
+
+    const records = await this.prismaService.attendance.findMany({
+      where: {
+        timetableId: { in: timetableIds },
+        semester,
+      },
+      include: {
+        timetable: true,
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+
+    // =============== MAP to DTO ===============
+    const mapped: AttendanceItem[] = records.map((a) => ({
+      id: a.id,
+      date: a.date,
+      semester: a.semester,
+      approve: a.approve,
+      timetable: {
+        id: a.timetable.id,
+        dayOfWeek: a.timetable.dayOfWeek,
+        startTime: a.timetable.startTime,
+        endTime: a.timetable.endTime,
+        classId: a.timetable.classId,
+        subjectTeacherid: a.timetable.subjectTeacherid,
+      },
+    }));
+
+    return {
+      count: mapped.length,
+      classId,
+      subjectTeacherId,
+      teacherName: subjectTeacherDetail?.teacher.user.fullName || '',
+      subjectName: subjectTeacherDetail?.subject.name || '',
+      semester,
+      attendances: mapped,
+    };
+  }
+}

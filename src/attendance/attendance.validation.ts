@@ -11,11 +11,13 @@ export class AttendanceValidation {
     semester: z.enum(Semester, 'Semester harus valid'),
     status: z.enum(AttendanceStatus, 'Status harus valid'),
     note: z.string().optional(),
+    approve: z.string()
   });
-
+  
   // Validasi UPDATE Attendance
   static readonly UPDATE = z.object({
     status: z.enum(AttendanceStatus, 'Status harus valid').optional(),
     note: z.string().optional(),
+    approve: z.string()
   });
 }

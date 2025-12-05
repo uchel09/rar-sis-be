@@ -14,7 +14,7 @@ import { StudentClassHistoryModule } from './student-class-history/student-class
 import { StaffModule } from './staff/staff.module';
 import { StudentDraftModule } from './student-draft/student-draft.module';
 import { SubjectModule } from './subject/subject.module';
-// import { AttendanceModule } from './attendance/attendance.module';
+import { AttendanceModule } from './attendance/attendance.module';
 import { TimeTableModule } from './time-table/time-table.module';
 import { AcademicYearModule } from './academic-year/academic-year.module';
 import { SubjectTeacherModule } from './subject-teacher/subject-teacher.module';
@@ -36,7 +36,7 @@ import { SubjectTeacherModule } from './subject-teacher/subject-teacher.module';
     StaffModule,
     StudentDraftModule,
     SubjectModule,
-    // AttendanceModule,
+    AttendanceModule,
     TimeTableModule,
     AcademicYearModule,
     SubjectTeacherModule,

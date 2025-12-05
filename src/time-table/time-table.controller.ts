@@ -14,6 +14,7 @@ import {
   CreateTimetableRequest,
   UpdateTimetableRequest,
   TimetableResponse,
+  InsertSubjectTeacherRequest,
 } from 'src/model/time-table.model';
 
 @Controller('/api/timetables')
@@ -53,10 +54,29 @@ export class TimeTableController {
       schoolId,
       classId,
     );
-    console.log(result)
+    console.log(result);
     return { count: result.length, data: result };
   }
+  @Get('/teacher')
+  async findAllByTeacherId(
+    @Query('teacherId') teacherId: string,
+    @Query('schoolId') schoolId: string,
+  ): Promise<WebResponse<TimetableResponse[]>> {
+    const result = await this.timetableService.findAllByTeacherId(
+      schoolId,
+      teacherId,
+    );
 
+    return { count: result.length, data: result };
+  }
+  @Put('/subject-teacher/:id')
+  async UpdateSubjectTeacher(
+    @Param('id') id: string,
+    @Body() body: InsertSubjectTeacherRequest,
+  ): Promise<WebResponse<TimetableResponse>> {
+    const result = await this.timetableService.UpdateSubjectTeacher(id, body);
+    return { data: result };
+  }
   // ✅ READ BY ID
   @Get(':id')
   async findById(

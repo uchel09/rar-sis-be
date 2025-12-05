@@ -1,64 +1,57 @@
-// import {
-//   Body,
-//   Controller,
-//   Delete,
-//   Get,
-//   Param,
-//   Post,
-//   Put,
-//   HttpCode,
-// } from '@nestjs/common';
-// import { AttendanceService } from './attendance.service';
-// import {
-//   CreateAttendanceRequest,
-//   UpdateAttendanceRequest,
-//   AttendanceResponse,
-// } from 'src/model/attendance.model';
-// import { WebResponse } from 'src/model/web.model';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import { AttendanceService } from './attendance.service';
+import {
+  AttendanceBulkResponse,
+  GenerateBulkAttendanceDto,
+} from 'src/model/attendance.model';
+import { WebResponse } from 'src/model/web.model';
+import { Semester } from 'generated/prisma';
 
-// @Controller('/api/attendances')
-// export class AttendanceController {
-//   constructor(private readonly attendanceService: AttendanceService) {}
+@Controller('/api/attendances')
+export class AttendanceController {
+  constructor(private readonly attendanceService: AttendanceService) {}
 
-//   // ✅ CREATE
-//   @Post()
-//   async create(
-//     @Body() request: CreateAttendanceRequest,
-//   ): Promise<WebResponse<AttendanceResponse>> {
-//     const result = await this.attendanceService.create(request);
-//     return { data: result };
-//   }
+  // ======================================================
+  // ✅ CREATE (single)
 
-//   // ✅ READ ALL
-//   @Get()
-//   async findAll(): Promise<WebResponse<AttendanceResponse[]>> {
-//     const result = await this.attendanceService.findAll();
-//     return { data: result };
-//   }
+  // ======================================================
+  // ✅ BULK CREATE BY TIMETABLE ID
+  // ======================================================
+  @Post('bulk/generate')
+  async generateBulkAttendance(@Body() body: GenerateBulkAttendanceDto) {
+    const { classId, subjectTeacherId, semester } = body;
 
-//   // ✅ READ BY ID
-//   @Get(':id')
-//   async findById(
-//     @Param('id') id: string,
-//   ): Promise<WebResponse<AttendanceResponse>> {
-//     const result = await this.attendanceService.findById(id);
-//     return { data: result };
-//   }
+    return this.attendanceService.createBulkAttendanceForClassSubjectTeacher(
+      classId,
+      subjectTeacherId,
+      semester,
+    );
+  }
 
-//   // ✅ UPDATE
-//   @Put(':id')
-//   async update(
-//     @Param('id') id: string,
-//     @Body() data: UpdateAttendanceRequest,
-//   ): Promise<WebResponse<AttendanceResponse>> {
-//     const result = await this.attendanceService.update(id, data);
-//     return { data: result };
-//   }
+  @Delete('bulk')
+  async deleteBulkAttendance(
+    @Body()
+    body: GenerateBulkAttendanceDto,
+  ) {
+    const { classId, subjectTeacherId, semester } = body;
 
-//   // ✅ DELETE
-//   @Delete(':id')
-//   @HttpCode(200)
-//   async delete(@Param('id') id: string): Promise<{ message: string }> {
-//     return this.attendanceService.delete(id);
-//   }
-// }
+    return await this.attendanceService.deleteBulkAttendanceForClassSubjectTeacher(
+      classId,
+      subjectTeacherId,
+      semester,
+    );
+  }
+  @Get('bulk')
+  async getBulkAttendanceForClassSubjectTeacher(
+    @Query('classId') classId: string,
+    @Query('subjectTeacherId') subjectTeacherId: string,
+    @Query('semester') semester: Semester,
+  ): Promise<WebResponse<AttendanceBulkResponse[]>> {
+    return this.attendanceService.getBulkAttendanceForClassSubjectTeacher(
+      classId,
+      subjectTeacherId,
+      semester,
+    );
+  }
+}

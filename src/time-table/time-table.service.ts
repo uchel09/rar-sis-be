@@ -12,6 +12,7 @@ import {
   CreateTimetableRequest,
   UpdateTimetableRequest,
   TimetableResponse,
+  InsertSubjectTeacherRequest,
 } from 'src/model/time-table.model';
 import { Logger } from 'winston';
 import { TimetableValidation } from './time-table.validation';
@@ -282,6 +283,94 @@ export class TimeTableService {
         : undefined,
     }));
   }
+  async findAllByTeacherId(
+    schoolId: string,
+    teacherId: string,
+  ): Promise<TimetableResponse[]> {
+    this.logger.info(
+      `Find all timetables for schoolId=${schoolId}, teacherId=${teacherId}`,
+    );
+    console.log(schoolId);
+    const timetables = await this.prisma.timetable.findMany({
+      where: { schoolId, subjectTeacher: { teacherId } },
+      select: {
+        id: true,
+        classId: true,
+        subjectTeacherid: true,
+        dayOfWeek: true,
+        startTime: true,
+        endTime: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        class: {
+          select: {
+            id: true,
+            name: true,
+            grade: true,
+          },
+        },
+        subjectTeacher: {
+          select: {
+            id: true,
+            teacher: {
+              select: {
+                id: true,
+                user: { select: { fullName: true } },
+              },
+            },
+            subject: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    // 🧩 Urutkan manual berdasarkan hari & waktu mulai
+    const dayOrder: Record<string, number> = {
+      MONDAY: 1,
+      TUESDAY: 2,
+      WEDNESDAY: 3,
+      THURSDAY: 4,
+      FRIDAY: 5,
+      SATURDAY: 6,
+      SUNDAY: 7,
+    };
+
+    const sorted = timetables.sort((a, b) => {
+      const dayDiff = dayOrder[a.dayOfWeek] - dayOrder[b.dayOfWeek];
+      if (dayDiff !== 0) return dayDiff;
+      return a.startTime.getTime() - b.startTime.getTime();
+    });
+
+    return sorted.map((tt) => ({
+      id: tt.id,
+      classId: tt.classId,
+      startTime: tt.startTime.toISOString().substring(11, 16), // 👉 ambil hanya jam & menit
+      endTime: tt.endTime.toISOString().substring(11, 16),
+      dayOfWeek: tt.dayOfWeek,
+      isActive: tt.isActive,
+      createdAt: tt.createdAt,
+      updatedAt: tt.updatedAt,
+      class: tt.class
+        ? {
+            id: tt.class.id,
+            name: tt.class.name,
+            grade: tt.class.grade,
+          }
+        : undefined,
+      subjectTeacher: tt.subjectTeacher
+        ? {
+            id: tt.subjectTeacher.id,
+            teacherId: tt.subjectTeacher.teacher.id,
+            teacherFullname: tt.subjectTeacher.teacher.user.fullName,
+            subjectId: tt.subjectTeacher.subject.id,
+            subjectName: tt.subjectTeacher.subject.name,
+          }
+        : undefined,
+    }));
+  }
+
+  //untuk login tiap dashboard teacher
 
   // ✅ READ ALL
   async findAll(): Promise<TimetableResponse[]> {
@@ -491,6 +580,159 @@ export class TimeTableService {
       },
     });
 
+    return {
+      id: updated.id,
+      classId: updated.classId,
+      startTime: updated.startTime.toISOString().substring(11, 16),
+      endTime: updated.endTime.toISOString().substring(11, 16),
+      dayOfWeek: updated.dayOfWeek,
+      isActive: updated.isActive,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+      class: updated.class,
+      subjectTeacher: updated.subjectTeacher
+        ? {
+            id: updated.subjectTeacher.id,
+            teacherId: updated.subjectTeacher.teacher.id,
+            teacherFullname: updated.subjectTeacher.teacher.user.fullName,
+            subjectId: updated.subjectTeacher.subject.id,
+            subjectName: updated.subjectTeacher.subject.name,
+          }
+        : undefined,
+    };
+  }
+  async UpdateSubjectTeacher(
+    id: string,
+    data: InsertSubjectTeacherRequest,
+  ): Promise<TimetableResponse> {
+    this.logger.info(`Update subjectTeacher timetable ${id}`);
+
+    // ==========================
+    // CEK EXISTING TIMETABLE
+    // ==========================
+    const exist = await this.prisma.timetable.findUnique({
+      where: { id },
+    });
+
+    if (!exist) {
+      throw new NotFoundException(`Timetable dengan id ${id} tidak ditemukan`);
+    }
+
+    const insertSubjectTeacherRequest: InsertSubjectTeacherRequest =
+      this.validationService.validate(TimetableValidation.INSERT, data);
+
+    if (!insertSubjectTeacherRequest.subjectTeacherid) {
+      throw new HttpException('subjectTeacherid wajib diisi', 400);
+    }
+
+    // =====================================================
+    // Ambil subjectTeacher baru -> untuk dapatkan teacher.id
+    // =====================================================
+    const subjectTeacher = await this.prisma.subjectTeacher.findUnique({
+      where: { id: insertSubjectTeacherRequest.subjectTeacherid },
+      select: {
+        id: true,
+        teacher: {
+          select: {
+            id: true,
+            user: { select: { fullName: true } }, // utk pesan error (opsional)
+          },
+        },
+      },
+    });
+
+    if (!subjectTeacher) {
+      throw new NotFoundException(
+        `SubjectTeacher dengan id ${insertSubjectTeacherRequest.subjectTeacherid} tidak ditemukan`,
+      );
+    }
+
+    const teacherId = subjectTeacher.teacher.id;
+    const teacherName = subjectTeacher.teacher.user?.fullName ?? 'Guru terkait';
+
+    // =====================================================
+    // ❗ CEK BENTROK WAKTU UNTUK GURU YANG SAMA
+    //    Bentrok jika:
+    //    - hari sama
+    //    - waktu overlap (start < otherEnd && end > otherStart)
+    //    - dan jadwal itu milik guru yang sama (bukan berdasarkan subjectTeacherid)
+    // =====================================================
+
+    const conflict = await this.prisma.timetable.findFirst({
+      where: {
+        id: { not: id },
+        dayOfWeek: exist.dayOfWeek,
+        // filter relasi: cari timetable yang subjectTeacher.teacher.id == teacherId
+        subjectTeacher: {
+          is: {
+            teacher: { is: { id: teacherId } },
+          },
+        },
+        AND: [
+          { startTime: { lt: exist.endTime } }, // jadwal lain mulai sebelum jadwal ini berakhir
+          { endTime: { gt: exist.startTime } }, // jadwal lain berakhir setelah jadwal ini mulai
+        ],
+      },
+      select: {
+        id: true,
+        class: { select: { id: true, name: true } },
+        startTime: true,
+        endTime: true,
+        subjectTeacher: {
+          select: {
+            id: true,
+            subject: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    if (conflict) {
+      throw new HttpException(
+        `Guru ${teacherName} bentrok: sudah mengajar di kelas ${conflict.class.name} dari ${conflict.startTime
+          .toISOString()
+          .substring(11, 16)} sampai ${conflict.endTime
+          .toISOString()
+          .substring(11, 16)}`,
+        400,
+      );
+    }
+
+    // ==========================
+    // UPDATE subjectTeacher SAJA
+    // ==========================
+    const updated = await this.prisma.timetable.update({
+      where: { id },
+      data: {
+        subjectTeacherid: insertSubjectTeacherRequest.subjectTeacherid,
+        isActive: insertSubjectTeacherRequest.isActive,
+      },
+      select: {
+        id: true,
+        classId: true,
+        subjectTeacherid: true,
+        dayOfWeek: true,
+        startTime: true,
+        endTime: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        class: {
+          select: { id: true, name: true, grade: true },
+        },
+        subjectTeacher: {
+          select: {
+            id: true,
+            teacher: {
+              select: { id: true, user: { select: { fullName: true } } },
+            },
+            subject: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    // RETURN
     return {
       id: updated.id,
       classId: updated.classId,

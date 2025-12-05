@@ -73,4 +73,12 @@ export class TimetableValidation {
         path: ['endTime'],
       },
     );
+  static readonly INSERT = z
+    .object({
+      subjectTeacherid: z
+        .uuid({ message: 'subjectTeacherId harus UUID' }),
+      isActive: z.boolean()
+    })
+   
+    
 }

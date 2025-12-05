@@ -18,6 +18,10 @@ export interface UpdateTimetableRequest {
   endTime?: string;
   isActive?: boolean;
 }
+export interface InsertSubjectTeacherRequest {
+  subjectTeacherid: string;
+  isActive?: boolean;
+}
 
 export interface TimetableResponse {
   id: string;
