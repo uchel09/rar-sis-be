@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import {
   AttendanceBulkResponse,
+  CreateAttendanceDetailDto,
   GenerateBulkAttendanceDto,
+  UpdateAttendanceDetailDto,
 } from 'src/model/attendance.model';
 import { WebResponse } from 'src/model/web.model';
-import { Semester } from 'generated/prisma';
+import { AttendanceStatus, Semester } from 'generated/prisma';
 
 @Controller('/api/attendances')
 export class AttendanceController {
@@ -54,4 +56,53 @@ export class AttendanceController {
       semester,
     );
   }
+
+  @Post('details/:attendanceId')
+  async createAttendanceDetail(
+    @Param('attendanceId') attendanceId: string,
+    @Body() dto: CreateAttendanceDetailDto,
+  ) {
+    if (!dto.students || dto.students.length === 0) {
+      throw new HttpException('No students provided', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.attendanceService.createAttendanceDetailForAttendance(
+      attendanceId,
+      dto.students,
+      dto.defaultStatus ?? AttendanceStatus.PRESENT,
+    );
+  }
+
+  // =========================
+  // 2️⃣ Get AttendanceDetail
+  // GET /attendance/:attendanceId/details
+  // =========================
+  @Get('details/:attendanceId')
+  async getAttendanceDetail(@Param('attendanceId') attendanceId: string) {
+    return this.attendanceService.getAttendanceDetailsByAttendanceId(
+      attendanceId,
+    );
+  }
+
+  // =========================
+  // 3️⃣ Bulk Update + Approve AttendanceDetail
+  // PATCH /attendance/:attendanceId/details
+  // =========================
+  @Patch('details/:attendanceId')
+  async bulkUpdateAttendanceDetail(
+    @Param('attendanceId') attendanceId: string,
+    @Body() dto: UpdateAttendanceDetailDto,
+  ) {
+    if (!dto.updates || dto.updates.length === 0) {
+      throw new HttpException('No updates provided', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.attendanceService.bulkUpdateAndApproveAttendance(
+      attendanceId,
+      dto.updates,
+      dto.approve ?? true,
+    );
+  }
 }
+
+

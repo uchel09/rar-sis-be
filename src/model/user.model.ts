@@ -24,3 +24,22 @@ export class UpdateUserRequest {
   role: Role;
   gender: Gender;
 }
+
+export class UserLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface UserLoginResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  profileId: string | null
+}
+export interface JwtPayload {
+  id: string;
+  email: string;
+  role: string;
+  profileId: string | null
+}

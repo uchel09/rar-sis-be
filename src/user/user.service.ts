@@ -48,7 +48,7 @@ export class UserService {
       email: user.email,
       role: user.role,
       createdAt: user.createdAt,
-      gender: user.gender
+      gender: user.gender,
     };
   }
 
@@ -124,5 +124,78 @@ export class UserService {
     return { message: `User ${id} deleted successfully` };
   }
 
-  async resetPass(){}
+  async resetPass() {}
+  async findMe(userId: string) {
+    this.logger.info(`Find current user profile ${userId}`);
+
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      include: {
+        student: true,
+        teacher: true,
+        parent: true,
+        staff: true,
+        schoolAdmins: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // base user
+    const base = {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      gender: user.gender,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
+
+    // mapping profile by role
+    switch (user.role) {
+      case 'STUDENT':
+        return {
+          ...base,
+          profile: user.student,
+        };
+
+      case 'TEACHER':
+        return {
+          ...base,
+          profile: user.teacher,
+        };
+
+      case 'PARENT':
+        return {
+          ...base,
+          profile: user.parent,
+        };
+
+      case 'STAFF':
+        return {
+          ...base,
+          profile: user.staff,
+        };
+
+      case 'SCHOOL_ADMIN':
+        return {
+          ...base,
+          profile: user.schoolAdmins,
+        };
+
+      case 'SUPERADMIN':
+        return {
+          ...base,
+          profile: null,
+        };
+
+      default:
+        return {
+          ...base,
+          profile: null,
+        };
+    }
+  }
 }

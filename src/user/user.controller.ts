@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { WebResponse } from 'src/model/web.model';
@@ -36,6 +37,13 @@ export class UserController {
     return {
       data: result,
     };
+  }
+
+  @Get('/me')
+  async me(@Req() req): Promise<WebResponse<any>> {
+    const userId = req.user.id; // dari middleware
+    const result = await this.userService.findMe(userId);
+    return { data: result };
   }
 
   // ✅ READ BY ID

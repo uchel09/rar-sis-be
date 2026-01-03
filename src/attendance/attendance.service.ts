@@ -1,20 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import {
-  Injectable,
-  HttpException,
-  NotFoundException,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, HttpException, Inject, HttpStatus } from '@nestjs/common';
 import { PrismaService } from 'src/common/prisma.service';
 import { VallidationService } from 'src/common/validation.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
-import { AttendanceValidation } from './attendance.validation';
 import {
-  CreateAttendanceRequest,
-  UpdateAttendanceRequest,
-  AttendanceResponse,
   AttendanceBulkResponse,
+  AttendanceDetailItem,
   AttendanceItem,
 } from 'src/model/attendance.model';
 import { AttendanceStatus, DayOfWeek, Semester } from 'generated/prisma';
@@ -179,16 +171,28 @@ export class AttendanceService {
         'Tidak ditemukan timetable untuk class dan subjectTeacher tersebut.',
       );
     }
+
     const subjectTeacherDetail =
       await this.prismaService.subjectTeacher.findFirst({
         where: { id: subjectTeacherId },
         include: {
           subject: true,
-          teacher: {
-            include: { user: true }
-          },
+          teacher: { include: { user: true } },
         },
       });
+
+    const classStudents = await this.prismaService.class.findFirst({
+      where: { id: classId },
+      include: {
+        students: { include: { user: true } },
+      },
+    });
+
+    const students =
+      classStudents?.students.map((s) => ({
+        studentId: s.id,
+        fullName: s.user.fullName,
+      })) ?? [];
 
     const timetableIds = timetables.map((tt) => tt.id);
 
@@ -199,18 +203,30 @@ export class AttendanceService {
       },
       include: {
         timetable: true,
+        attendanceDetails: true, // <---- ambil detail
       },
       orderBy: {
         date: 'asc',
       },
     });
 
-    // =============== MAP to DTO ===============
     const mapped: AttendanceItem[] = records.map((a) => ({
       id: a.id,
       date: a.date,
       semester: a.semester,
       approve: a.approve,
+
+      // =====================
+      //   Sesuai interface kamu
+      // =====================
+      attendancesDetails: a.attendanceDetails.map((d) => ({
+        id: d.id,
+        attendanceId: d.attendanceId,
+        studentId: d.studentId,
+        status: d.status,
+        note: d.note,
+      })),
+
       timetable: {
         id: a.timetable.id,
         dayOfWeek: a.timetable.dayOfWeek,
@@ -228,7 +244,125 @@ export class AttendanceService {
       teacherName: subjectTeacherDetail?.teacher.user.fullName || '',
       subjectName: subjectTeacherDetail?.subject.name || '',
       semester,
+      students,
       attendances: mapped,
+    };
+  }
+
+  async createAttendanceDetailForAttendance(
+    attendanceId: string,
+    students: { studentId: string; fullName: string }[],
+    defaultStatus: AttendanceStatus = AttendanceStatus.PRESENT,
+  ) {
+    // 1️⃣ Ambil existing attendance details
+    const existing = await this.prismaService.attendanceDetail.findMany({
+      where: { attendanceId },
+      select: { studentId: true },
+    });
+
+    // 2️⃣ Filter siswa yang belum ada detail
+    const toCreate = students
+      .filter((s) => !existing.some((e) => e.studentId === s.studentId))
+      .map((s) => ({
+        attendanceId,
+        studentId: s.studentId,
+        status: defaultStatus,
+        note: null,
+      }));
+
+    if (toCreate.length === 0) {
+      throw new HttpException(
+        `Attendance details for attendance ${attendanceId} already exist`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 3️⃣ Create
+    const created = await this.prismaService.attendanceDetail.createMany({
+      data: toCreate,
+      skipDuplicates: true, // masih aman sebagai safety net
+    });
+
+    return {
+      created: created.count,
+      message: `Attendance details created for attendance ${attendanceId}`,
+    };
+  }
+
+  // =========================
+  // 2️⃣ Get AttendanceDetail by attendanceId
+  // =========================
+  async getAttendanceDetailsByAttendanceId(
+    attendanceId: string,
+  ): Promise<AttendanceDetailItem[]> {
+    const details = await this.prismaService.attendanceDetail.findMany({
+      where: { attendanceId },
+      include: {
+        student: {
+          select: {
+            id: true,
+            user: { select: { fullName: true } },
+          },
+        },
+      },
+    });
+
+    if (!details || details.length === 0) {
+      throw new HttpException(
+        `No attendance details found for attendance ${attendanceId}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return details.map((d) => ({
+      id: d.id,
+      studentId: d.studentId,
+      studentName: d.student.user.fullName,
+      status: d.status,
+      note: d.note,
+    }));
+  }
+
+  // =========================
+  // 3️⃣ Bulk Update AttendanceDetail + Approve Attendance
+  // =========================
+  async bulkUpdateAndApproveAttendance(
+    attendanceId: string,
+    updates: { studentId: string; status?: AttendanceStatus; note?: string }[],
+    approve: boolean = true, // default langsung approve
+  ) {
+    if (!updates || updates.length === 0) {
+      throw new HttpException('No updates provided', HttpStatus.BAD_REQUEST);
+    }
+
+    // Bulk update AttendanceDetail
+    const updatePromises = updates.map((u) =>
+      this.prismaService.attendanceDetail.updateMany({
+        where: { attendanceId, studentId: u.studentId },
+        data: { status: u.status, note: u.note },
+      }),
+    );
+
+    const results = await Promise.all(updatePromises);
+    const totalUpdated = results.reduce((acc, r) => acc + r.count, 0);
+
+    if (totalUpdated === 0) {
+      throw new HttpException(
+        `No attendance details updated for attendance ${attendanceId}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Update Attendance.approve
+    const attendanceUpdated = await this.prismaService.attendance.update({
+      where: { id: attendanceId },
+      data: { approve },
+    });
+
+    return {
+      totalUpdated,
+      attendanceApproved: attendanceUpdated.approve,
+      message: `Updated ${totalUpdated} attendance details and set approve=${approve} for attendance ${attendanceId}`,
     };
   }
 }
