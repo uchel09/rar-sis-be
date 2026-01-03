@@ -2,7 +2,7 @@ import {
   Module,
   MiddlewareConsumer,
   NestModule,
-  RequestMethod,
+  // RequestMethod,
 } from '@nestjs/common';
 import { CommonModule } from './common/common.module';
 import { UserModule } from './user/user.module';
@@ -56,7 +56,7 @@ export class AppModule implements NestModule {
       .exclude('api/auth/login', 'api/auth/logout', 'api/auth/me')
       .forRoutes(
         // 🔒 YANG DIPROTEK
-        { path: 'api/users/me', method: RequestMethod.GET },
+        // { path: 'api/users/me', method: RequestMethod.GET },
         // { path: 'api/attendance', method: RequestMethod.ALL },
         // { path: 'api/subjects', method: RequestMethod.ALL },
         // { path: 'api/teachers', method: RequestMethod.ALL },
