@@ -172,6 +172,7 @@ model School {
   timetables Timetable[]
 
   studentDrafts StudentDraft[]
+  assessments   Assessment[]
 }
 
 model SchoolAdmin {
@@ -209,6 +210,8 @@ model Student {
   studentClassHistories StudentClassHistory[]
   studentDraft          StudentDraft?
   attendanceDetails     AttendanceDetail[]
+  assessmentGrades      AssessmentGrade[]
+  studentExams          StudentExam[]
 }
 
 model StudentDraft {
@@ -287,6 +290,7 @@ model Teacher {
   homerooms Class[] @relation("HomeroomClass")
 
   subjectTeachers SubjectTeacher[]
+  assessments     Assessment[]
 }
 
 model Staff {
@@ -324,6 +328,7 @@ model Class {
   academicYear          AcademicYear          @relation(fields: [academicYearId], references: [id])
   studentDrafts         StudentDraft[]
   timetables            Timetable[]
+  assessments           Assessment[]
 }
 
 model StudentClassHistory {
@@ -354,17 +359,18 @@ model Subject {
 
   school          School           @relation(fields: [schoolId], references: [id])
   subjectTeachers SubjectTeacher[]
+  assessments     Assessment[]
 }
 
 model Attendance {
-  id          String           @id @default(uuid())
+  id          String   @id @default(uuid())
   timetableId String
   schoolId    String
   date        DateTime
   semester    Semester
   approve     Boolean
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   school    School    @relation(fields: [schoolId], references: [id])
   timetable Timetable @relation(fields: [timetableId], references: [id])
@@ -429,14 +435,181 @@ model AcademicYear {
   studentClassHistories StudentClassHistory[]
 
   // AcademicYearQuota AcademicYearQuota[]
+  assessments Assessment[]
 }
+
+//  ======================== exam and asssesment ==================
+
+/// =======================
+/// ENUMS
+/// =======================
+
+enum AssessmentType {
+  ASSIGNMENT
+  MID_EXAM
+  FINAL_EXAM
+  PRACTICAL
+  OTHER
+}
+
+enum GradingMode {
+  AUTO
+  MANUAL
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+}
+
+enum MediaType {
+  IMAGE
+}
+
+/// =======================
+/// ASSESSMENT
+/// =======================
+
+model Assessment {
+  id          String         @id @default(uuid())
+  title       String
+  type        AssessmentType
+  gradingMode GradingMode
+  maxScore    Int
+  date        DateTime
+
+  subjectId      String
+  classId        String
+  teacherId      String
+  schoolId       String
+  academicYearId String
+  semester       Semester
+
+  subject      Subject      @relation(fields: [subjectId], references: [id])
+  class        Class        @relation(fields: [classId], references: [id])
+  teacher      Teacher      @relation(fields: [teacherId], references: [id])
+  school       School       @relation(fields: [schoolId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  exam   Exam?
+  grades AssessmentGrade[]
+}
+
+/// =======================
+/// GRADE RESULT
+/// =======================
+
+model AssessmentGrade {
+  id           String  @id @default(uuid())
+  assessmentId String
+  studentId    String
+  score        Int
+  note         String?
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+  student    Student    @relation(fields: [studentId], references: [id])
+
+  @@unique([assessmentId, studentId])
+}
+
+/// =======================
+/// EXAM
+/// =======================
+
+model Exam {
+  id           String @id @default(uuid())
+  assessmentId String @unique
+
+  startTime DateTime
+  endTime   DateTime
+  duration  Int
+
+  assessment   Assessment     @relation(fields: [assessmentId], references: [id])
+  questions    ExamQuestion[]
+  studentExams StudentExam[]
+}
+
+/// =======================
+/// QUESTIONS (MCQ)
+/// =======================
+
+model ExamQuestion {
+  id       String       @id @default(uuid())
+  examId   String
+  type     QuestionType
+  question String
+  score    Int
+
+  options Json
+  correct String
+
+  exam        Exam                @relation(fields: [examId], references: [id])
+  media       ExamQuestionMedia[] // ⬅️ BISA LEBIH DARI 1 GAMBAR
+  examAnswers ExamAnswer[]
+}
+
+/// =======================
+/// QUESTION MEDIA
+/// =======================
+
+model ExamQuestionMedia {
+  id         String    @id @default(uuid())
+  questionId String
+  type       MediaType
+  url        String
+
+  question ExamQuestion @relation(fields: [questionId], references: [id])
+
+  @@index([questionId])
+}
+
+/// =======================
+/// STUDENT EXAM
+/// =======================
+
+model StudentExam {
+  id        String @id @default(uuid())
+  examId    String
+  studentId String
+
+  startedAt   DateTime
+  submittedAt DateTime?
+  totalScore  Int       @default(0)
+
+  exam    Exam    @relation(fields: [examId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  answers ExamAnswer[]
+
+  @@unique([examId, studentId])
+}
+
+/// =======================
+/// ANSWERS
+/// =======================
+
+model ExamAnswer {
+  id            String @id @default(uuid())
+  studentExamId String
+  questionId    String
+
+  answer    String
+  isCorrect Boolean
+  score     Int
+
+  studentExam StudentExam  @relation(fields: [studentExamId], references: [id])
+  question    ExamQuestion @relation(fields: [questionId], references: [id])
+
+  @@unique([studentExamId, questionId])
+}
+
+//  ======================== exam and asssesment ==================
+
 // model Holiday {
 //   id        String   @id @default(uuid())
 //   schoolId  String
 //   date      DateTime
 //   title     String
 // }
-
 
 // model AcademicYearQuota {
 //   id             String   @id @default(uuid())
@@ -466,108 +639,4 @@ model AcademicYear {
 //   school School @relation(fields: [schoolId], references: [id])
 
 //   @@unique([userId, date]) // 1 user hanya boleh absen sekali per hari
-// }
-
-// model Assessment {
-//   id          String   @id @default(uuid())
-//   subjectId   String
-//   classId     String
-//   teacherId   String
-//   schoolId    String
-//   academicYearId String
-//   semester    Semester
-//   type        AssessmentType // TUGAS, UTS, UAS, QUIZ, dll
-//   title       String
-//   description String?
-//   date        DateTime
-//   maxScore    Int
-
-//   subject      Subject      @relation(fields: [subjectId], references: [id])
-//   class        Class        @relation(fields: [classId], references: [id])
-//   teacher      Teacher      @relation(fields: [teacherId], references: [id])
-//   school       School       @relation(fields: [schoolId], references: [id])
-//   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-
-//   grades AssessmentGrade[]
-// }
-
-// model AssessmentGrade {
-//   id           String @id @default(uuid())
-//   assessmentId String
-//   studentId    String
-//   score        Int
-//   note         String?
-
-//   assessment Assessment @relation(fields: [assessmentId], references: [id])
-//   student    Student    @relation(fields: [studentId], references: [id])
-
-//   @@unique([assessmentId, studentId])
-// }
-
-// enum AssessmentType {
-//   ASSIGNMENT // Tugas
-//   MID_EXAM   // UTS
-//   FINAL_EXAM // UAS
-//   PRACTICAL  // Praktek
-//   OTHER
-// }
-
-// model Exam {
-//   id             String   @id @default(uuid())
-//   subjectId      String
-//   classId        String
-//   teacherId      String
-//   academicYearId String
-//   semester       Semester
-//   title          String      
-//   description    String?
-//   startTime      DateTime
-//   endTime        DateTime
-//   duration       Int        
-//   createdAt      DateTime @default(now())
-//   updatedAt      DateTime @updatedAt
-
-//   subject      Subject      @relation(fields: [subjectId], references: [id])
-//   class        Class        @relation(fields: [classId], references: [id])
-//   teacher      Teacher      @relation(fields: [teacherId], references: [id])
-//   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
-
-//   questions   ExamQuestion[]
-//   studentExams StudentExam[]
-// }
-
-// model ExamQuestion {
-//   id        String   @id @default(uuid())
-//   examId    String
-//   question  String
-//   options   Json      
-//   answerKey String     
-//   score     Float
-
-//   exam Exam @relation(fields: [examId], references: [id])
-//   answers ExamAnswer[]
-// }
-
-// model StudentExam {
-//   id        String   @id @default(uuid())
-//   examId    String
-//   studentId String
-//   startedAt DateTime?
-//   submittedAt DateTime?
-//   score     Float?
-
-//   exam    Exam    @relation(fields: [examId], references: [id])
-//   student Student @relation(fields: [studentId], references: [id])
-//   answers ExamAnswer[]
-// }
-
-// model ExamAnswer {
-//   id            String   @id @default(uuid())
-//   studentExamId String
-//   questionId    String
-//   answer        String
-//   isCorrect     Boolean?
-
-//   studentExam StudentExam  @relation(fields: [studentExamId], references: [id])
-//   question    ExamQuestion @relation(fields: [questionId], references: [id])
 // }
