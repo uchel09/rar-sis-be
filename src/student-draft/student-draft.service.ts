@@ -29,8 +29,8 @@ export class StudentDraftService {
     const data = Array.from({ length: 50 }).map((_, i) => ({
       email: `student${i + 1}@example.com`,
       fullName: `Student ${i + 1}`,
-      schoolId: 'a352d11d-3407-4a71-a299-031e3d22c5c8',
-      academicYearId: 'f1c8a8ce-e101-462b-98e6-c481a5ff77f4',
+      schoolId: 'ddd0ab48-16e0-430d-9502-94f4d006531f',
+      academicYearId: 'c191915b-a95e-4547-b186-3507300b38b5',
       targetClassId: null,
       studentId: null,
       enrollmentNumber: `ENR-${(1000 + i + 1).toString().padStart(4, '0')}`,

@@ -46,7 +46,7 @@ export class TeacherService {
         await prisma.teacher.create({
           data: {
             userId: user.id,
-            schoolId: 'a352d11d-3407-4a71-a299-031e3d22c5c8',
+            schoolId: 'ddd0ab48-16e0-430d-9502-94f4d006531f',
             nik: `9876543210${(i + 1).toString().padStart(2, '0')}`,
             nip: `19851231${(1000 + i + 1).toString().padStart(4, '0')}`,
             hireDate: new Date(2020, 0, 1 + i),
@@ -63,6 +63,56 @@ export class TeacherService {
     return {
       message: `✅ Berhasil membuat ${count} data dummy Teacher + User`,
       count,
+    };
+  }
+  async delete20DummyTeacher() {
+    // ambil semua user dummy teacher
+    const users = await this.prismaService.user.findMany({
+      where: {
+        role: Role.TEACHER,
+        email: {
+          startsWith: 'teacher',
+          endsWith: '@example.com',
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (users.length === 0) {
+      return {
+        message: '⚠️ Tidak ada dummy teacher yang bisa dihapus',
+        count: 0,
+      };
+    }
+
+    const userIds = users.map((u) => u.id);
+
+    // transaction biar aman
+    await this.prismaService.$transaction(async (prisma) => {
+      // 1️⃣ hapus teacher dulu
+      await prisma.teacher.deleteMany({
+        where: {
+          userId: {
+            in: userIds,
+          },
+        },
+      });
+
+      // 2️⃣ hapus user
+      await prisma.user.deleteMany({
+        where: {
+          id: {
+            in: userIds,
+          },
+        },
+      });
+    });
+
+    return {
+      message: `🗑️ Berhasil menghapus ${userIds.length} data dummy Teacher + User`,
+      count: userIds.length,
     };
   }
 

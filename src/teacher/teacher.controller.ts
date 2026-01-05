@@ -31,12 +31,17 @@ export class TeacherController {
       data: result,
     };
   }
-  @Post("/dummy")
+  @Post('/dummy')
   async create20DummyTeacher(): Promise<WebResponse<any>> {
     const result = await this.teacherService.create20DummyTeacher();
     return {
       data: result,
     };
+  }
+  @Delete('/dummy')
+  @HttpCode(HttpStatus.OK)
+  async deleteDummyTeacher() {
+    return this.teacherService.delete20DummyTeacher();
   }
 
   // ✅ READ ALL
