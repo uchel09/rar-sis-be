@@ -1,6 +1,6 @@
 // src/model/student.model.ts
 
-import { Gender } from "generated/prisma";
+import { Gender } from "@prisma/client";
 
 export interface CreateStudentRequest {
   email: string;

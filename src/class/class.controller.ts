@@ -17,7 +17,7 @@ import {
 } from 'src/model/class.model';
 import { WebResponse } from 'src/model/web.model';
 import { UtilService } from 'src/common/util.service';
-import { Grade } from 'generated/prisma';
+import { Grade } from '@prisma/client';
 
 @Controller('/api/classes')
 export class ClassController {

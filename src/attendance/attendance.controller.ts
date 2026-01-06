@@ -7,8 +7,7 @@ import {
   GenerateBulkAttendanceDto,
   UpdateAttendanceDetailDto,
 } from 'src/model/attendance.model';
-import { WebResponse } from 'src/model/web.model';
-import { AttendanceStatus, Semester } from 'generated/prisma';
+import { AttendanceStatus, Semester } from '@prisma/client';
 
 @Controller('/api/attendances')
 export class AttendanceController {
@@ -49,7 +48,7 @@ export class AttendanceController {
     @Query('classId') classId: string,
     @Query('subjectTeacherId') subjectTeacherId: string,
     @Query('semester') semester: Semester,
-  ): Promise<WebResponse<AttendanceBulkResponse[]>> {
+  ): Promise<AttendanceBulkResponse> {
     return this.attendanceService.getBulkAttendanceForClassSubjectTeacher(
       classId,
       subjectTeacherId,
@@ -104,5 +103,3 @@ export class AttendanceController {
     );
   }
 }
-
-

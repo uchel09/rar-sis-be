@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AttendanceStatus, Semester } from 'generated/prisma';
+import { AttendanceStatus, Semester } from '@prisma/client';
 
 export class AttendanceValidation {
   // Validasi CREATE Attendance

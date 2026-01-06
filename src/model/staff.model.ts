@@ -1,4 +1,4 @@
-import { Gender, StaffPosition } from 'generated/prisma';
+import { Gender, StaffPosition } from '@prisma/client';
 export interface CreateStaffRequest {
   email: string; // dari User
   password: string; // dari User

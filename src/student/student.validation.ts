@@ -1,5 +1,5 @@
 // src/validation/student.validation.ts
-import { Gender } from 'generated/prisma';
+import { Gender } from '@prisma/client';
 import { z } from 'zod';
 
 export class StudentValidation {

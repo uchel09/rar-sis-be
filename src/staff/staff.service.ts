@@ -15,7 +15,7 @@ import {
   UpdateStaffRequest,
   StaffResponse,
 } from 'src/model/staff.model';
-import { Role, Prisma } from 'generated/prisma';
+import { Role, Prisma } from '@prisma/client';
 
 @Injectable()
 export class StaffService {

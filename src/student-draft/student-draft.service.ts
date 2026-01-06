@@ -14,7 +14,7 @@ import {
 } from 'src/model/student-draft.model';
 import { Logger } from 'winston';
 import { StudentDraftValidation } from './student-draft.validation';
-import { DraftStatus, DraftType, Gender, Grade } from 'generated/prisma';
+import { DraftStatus, DraftType, Gender, Grade } from '@prisma/client';
 
 @Injectable()
 export class StudentDraftService {

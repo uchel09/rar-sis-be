@@ -15,7 +15,7 @@ import {
   UpdateStudentRequest,
   StudentResponse,
 } from 'src/model/student.model';
-import { Role, Prisma } from 'generated/prisma';
+import { Role, Prisma } from '@prisma/client';
 
 @Injectable()
 export class StudentService {

@@ -1,4 +1,4 @@
-import { Grade } from 'generated/prisma';
+import { Grade } from '@prisma/client';
 
 
 // Request untuk CREATE Subject

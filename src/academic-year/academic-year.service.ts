@@ -13,7 +13,7 @@ import {
   CreateAcademicYearRequest,
   UpdateAcademicYearRequest,
 } from 'src/model/academic-year.model';
-import { AcademicYear } from 'generated/prisma';
+import { AcademicYear } from '@prisma/client';
 
 @Injectable()
 export class AcademicYearService {

@@ -13,7 +13,7 @@ import {
   CreateAcademicYearRequest,
   UpdateAcademicYearRequest,
 } from 'src/model/academic-year.model';
-import { AcademicYear } from 'generated/prisma';
+import { AcademicYear } from '@prisma/client';
 import { WebResponse } from 'src/model/web.model';
 
 @Controller('/api/academic-years')

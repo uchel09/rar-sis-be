@@ -14,9 +14,9 @@ import {
   UpdateSchoolAdminRequest,
   SchoolAdminResponse,
 } from 'src/model/school-admin.model';
-import { Role } from 'generated/prisma';
+import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class SchoolAdminService {

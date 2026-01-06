@@ -16,7 +16,7 @@ import {
 } from 'src/model/time-table.model';
 import { Logger } from 'winston';
 import { TimetableValidation } from './time-table.validation';
-import { DayOfWeek, Grade } from 'generated/prisma';
+import { DayOfWeek, Grade } from '@prisma/client';
 
 @Injectable()
 export class TimeTableService {
@@ -26,12 +26,27 @@ export class TimeTableService {
     private prisma: PrismaService,
   ) {}
 
+  private mergeTime(base: Date, time?: string): Date {
+    if (!time) return base;
+    const [hour, minute] = time.split(':').map(Number);
+    const result = new Date(base);
+    result.setUTCHours(hour, minute, 0, 0);
+    return result;
+  }
+
+  private buildTime(time: string): Date {
+    return new Date(`1970-01-01T${time}:00Z`);
+  }
+
   // ✅ CREATE
   async create(request: CreateTimetableRequest): Promise<TimetableResponse> {
     this.logger.info(`Create Timetable ${JSON.stringify(request)}`);
 
     const createRequest: CreateTimetableRequest =
       this.validationService.validate(TimetableValidation.CREATE, request);
+
+    const startTime = this.buildTime(createRequest.startTime);
+    const endTime = this.buildTime(createRequest.endTime);
 
     // 🧩 Cek jadwal bentrok dalam 1 kelas (hari & waktu)
     const conflict = await this.prisma.timetable.findFirst({
@@ -40,8 +55,8 @@ export class TimeTableService {
         dayOfWeek: createRequest.dayOfWeek,
         AND: [
           {
-            startTime: { lt: createRequest.endTime },
-            endTime: { gt: createRequest.startTime },
+            startTime: { lt: endTime },
+            endTime: { gt: startTime },
           },
         ],
       },
@@ -62,8 +77,8 @@ export class TimeTableService {
         classId: createRequest.classId,
         subjectTeacherid: createRequest.subjectTeacherid,
         dayOfWeek: createRequest.dayOfWeek,
-        startTime: createRequest.startTime,
-        endTime: createRequest.endTime,
+        startTime,
+        endTime,
         isActive: createRequest.isActive,
       },
       select: {
@@ -512,19 +527,31 @@ export class TimeTableService {
 
     // 🧩 Cek konflik waktu saat update (jika waktu dan hari berubah)
     if (
-      updateRequest.startTime &&
-      updateRequest.endTime &&
-      updateRequest.dayOfWeek
+      updateRequest.dayOfWeek ||
+      updateRequest.startTime ||
+      updateRequest.endTime ||
+      updateRequest.classId
     ) {
+      const effectiveDay = updateRequest.dayOfWeek ?? exist.dayOfWeek;
+      const effectiveClassId = updateRequest.classId ?? exist.classId;
+      const effectiveStartTime = this.mergeTime(
+        exist.startTime,
+        updateRequest.startTime,
+      );
+      const effectiveEndTime = this.mergeTime(
+        exist.endTime,
+        updateRequest.endTime,
+      );
+
       const conflict = await this.prisma.timetable.findFirst({
         where: {
           id: { not: id },
-          classId: exist.classId,
-          dayOfWeek: updateRequest.dayOfWeek,
+          classId: effectiveClassId,
+          dayOfWeek: effectiveDay,
           AND: [
             {
-              startTime: { lt: updateRequest.endTime },
-              endTime: { gt: updateRequest.startTime },
+              startTime: { lt: effectiveEndTime },
+              endTime: { gt: effectiveStartTime },
             },
           ],
         },
@@ -544,8 +571,12 @@ export class TimeTableService {
         subjectTeacherid: updateRequest.subjectTeacherid,
         classId: updateRequest.classId,
         dayOfWeek: updateRequest.dayOfWeek,
-        startTime: updateRequest.startTime,
-        endTime: updateRequest.endTime,
+        startTime: updateRequest.startTime
+          ? this.mergeTime(exist.startTime, updateRequest.startTime)
+          : undefined,
+        endTime: updateRequest.endTime
+          ? this.mergeTime(exist.endTime, updateRequest.endTime)
+          : undefined,
         isActive: updateRequest.isActive,
       },
       select: {

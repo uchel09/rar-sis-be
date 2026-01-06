@@ -9,7 +9,7 @@ import {
   AttendanceDetailItem,
   AttendanceItem,
 } from 'src/model/attendance.model';
-import { AttendanceStatus, DayOfWeek, Semester } from 'generated/prisma';
+import { AttendanceStatus, DayOfWeek, Semester } from '@prisma/client';
 
 @Injectable()
 export class AttendanceService {
@@ -95,16 +95,44 @@ export class AttendanceService {
       }
     }
 
+    const timetableIds = timetables.map((tt) => tt.id);
+
+    const existing = await this.prismaService.attendance.findMany({
+      where: {
+        timetableId: { in: timetableIds },
+        semester,
+        date: { gte: start, lte: end },
+      },
+      select: { timetableId: true, date: true },
+    });
+
+    const existingKeys = new Set(
+      existing.map(
+        (item) => `${item.timetableId}|${item.date.toISOString().slice(0, 10)}`,
+      ),
+    );
+
+    const toCreate = resultToCreate.filter(
+      (item) =>
+        !existingKeys.has(
+          `${item.timetableId}|${item.date.toISOString().slice(0, 10)}`,
+        ),
+    );
+
     // ==========================
     // 5. Create bulk attendance
     // ==========================
-    await this.prismaService.attendance.createMany({
-      data: resultToCreate,
-      skipDuplicates: true,
-    });
+    let createdCount = 0;
+    if (toCreate.length > 0) {
+      const created = await this.prismaService.attendance.createMany({
+        data: toCreate,
+        skipDuplicates: true,
+      });
+      createdCount = created.count;
+    }
 
     return {
-      created: resultToCreate.length,
+      created: createdCount,
       range: { start, end },
       message: 'Bulk attendance created for class + subjectTeacher',
     };

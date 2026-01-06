@@ -1,4 +1,4 @@
-import { DraftStatus, DraftType, Gender, Grade } from 'generated/prisma';
+import { DraftStatus, DraftType, Gender, Grade } from '@prisma/client';
 
 export interface CreateStudentDraftRequest {
   email: string;

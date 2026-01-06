@@ -3,7 +3,7 @@ import {
   AttendanceStatus,
   DayOfWeek,
   Semester,
-} from 'generated/prisma';
+} from '@prisma/client';
 
 export class GenerateBulkAttendanceDto {
   classId: string;

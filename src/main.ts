@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { ErrorFilter } from './common/error.filter';
-import * as cookieParser from "cookie-parser"
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,10 +12,24 @@ async function bootstrap() {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   app.useLogger(logger);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  app.use(cookieParser())
+  app.use(cookieParser());
   // ✅ aktifin CORS biar Next.js bisa akses
+  const allowedOrigins = (process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: ['http://localhost:3000'], // FE kamu (Next.js)
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (process.env.NODE_ENV !== 'production') {
+        if (/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+          return callback(null, true);
+        }
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Gender, StaffPosition } from 'generated/prisma';
+import { Gender, StaffPosition } from '@prisma/client';
 
 export class StaffValidation {
   static readonly CREATE = z.object({

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DayOfWeek } from 'generated/prisma';
+import { DayOfWeek } from '@prisma/client';
 
 // ======================
 // 🔧 Helper Functions

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Gender, Role } from 'generated/prisma';
+import { Gender, Role } from '@prisma/client';
 
 export class UserValidation {
   static readonly REGISTER = z.object({

@@ -15,7 +15,7 @@ import {
   UpdateParentRequest,
   ParentResponse,
 } from 'src/model/parent.model';
-import { Role, Prisma, DraftStatus } from 'generated/prisma';
+import { Role, Prisma, DraftStatus } from '@prisma/client';
 import { CreateStudentRequest } from 'src/model/student.model';
 import { StudentValidation } from 'src/student/student.validation';
 

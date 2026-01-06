@@ -1,4 +1,4 @@
-import { DayOfWeek, Grade } from 'generated/prisma';
+import { DayOfWeek, Grade } from '@prisma/client';
 
 export interface CreateTimetableRequest {
   schoolId: string;

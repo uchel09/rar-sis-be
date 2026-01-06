@@ -7,7 +7,7 @@ import { UserLoginRequest, UserLoginResponse } from 'src/model/user.model';
 import * as bcrypt from 'bcrypt';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
-import { Role } from 'generated/prisma';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {

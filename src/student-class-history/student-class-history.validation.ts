@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Grade, Semester, StudentStatus } from 'generated/prisma';
+import { Grade, Semester, StudentStatus } from '@prisma/client';
 
 export class StudentClassHistoryValidation {
   // ✅ CREATE

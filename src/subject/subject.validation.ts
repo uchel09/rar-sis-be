@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Grade } from 'generated/prisma';
+import { Grade } from '@prisma/client';
 
 export class SubjectValidation {
   static readonly CREATE = z.object({

@@ -14,7 +14,7 @@ import {
   UpdateClassRequest,
   ClassResponse,
 } from 'src/model/class.model';
-import { Grade } from 'generated/prisma';
+import { Grade } from '@prisma/client';
 
 @Injectable()
 export class ClassService {

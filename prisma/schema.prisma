@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -376,6 +375,8 @@ model Attendance {
   timetable Timetable @relation(fields: [timetableId], references: [id])
 
   attendanceDetails AttendanceDetail[]
+
+  @@unique([timetableId, date, semester])
 }
 
 model AttendanceDetail {

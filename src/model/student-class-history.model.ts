@@ -1,4 +1,4 @@
-import { Grade, Semester, StudentStatus } from 'generated/prisma';
+import { Grade, Semester, StudentStatus } from '@prisma/client';
 
 export interface CreateStudentClassHistoryRequest {
   studentId: string;

@@ -2,7 +2,6 @@ import {
   Module,
   MiddlewareConsumer,
   NestModule,
-  RequestMethod,
 } from '@nestjs/common';
 import { CommonModule } from './common/common.module';
 import { UserModule } from './user/user.module';
@@ -53,13 +52,12 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(AuthMiddleware)
-      .exclude('api/auth/login', 'api/auth/logout', 'api/auth/me')
-      .forRoutes(
-        // 🔒 YANG DIPROTEK
-        { path: 'api/users/me', method: RequestMethod.GET },
-        // { path: 'api/attendance', method: RequestMethod.ALL },
-        // { path: 'api/subjects', method: RequestMethod.ALL },
-        // { path: 'api/teachers', method: RequestMethod.ALL },
-      );
+      .exclude(
+        'api/auth/login',
+        'api/auth/logout',
+        'api/auth/me',
+        'api/academic-years/active',
+      )
+      .forRoutes('*');
   }
 }

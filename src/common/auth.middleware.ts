@@ -18,8 +18,6 @@ export class AuthMiddleware implements NestMiddleware {
   use(req: AuthRequest, res: Response, next: NextFunction) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
    
-   console.log('cookies:', req.cookies);
-   console.log('headers:', req.headers.cookie);
     const token = req.cookies?.access_token;
 
     if (!token) {
@@ -29,7 +27,6 @@ export class AuthMiddleware implements NestMiddleware {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-        console.log(decoded)
       req.user = decoded; // 🔥 TYPED
       next();
     } catch {

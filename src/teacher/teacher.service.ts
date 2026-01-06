@@ -14,9 +14,9 @@ import {
   UpdateTeacherRequest,
   TeacherResponse,
 } from 'src/model/teacher.model';
-import { Gender, Role } from 'generated/prisma';
+import { Gender, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TeacherService {
