@@ -29,11 +29,19 @@ export class AuthController {
       { expiresIn: '1d' },
     );
 
+    const sameSiteEnv = process.env.COOKIE_SAMESITE?.toLowerCase() as
+      | 'lax'
+      | 'strict'
+      | 'none'
+      | undefined;
+    const sameSite = sameSiteEnv ?? 'lax';
+    const secure = process.env.NODE_ENV === 'production' || sameSite === 'none';
+
     // 3️⃣ simpan token ke cookie
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure,
+      sameSite,
       maxAge: 24 * 60 * 60 * 1000, // 1 hari
     });
 

@@ -220,6 +220,18 @@ export class SubjectService {
       throw new NotFoundException(`Subject with id ${id} not found`);
     }
 
+    const [subjectTeacherCount, assessmentCount] = await Promise.all([
+      this.prismaService.subjectTeacher.count({ where: { subjectId: id } }),
+      this.prismaService.assessment.count({ where: { subjectId: id } }),
+    ]);
+
+    if (subjectTeacherCount > 0 || assessmentCount > 0) {
+      throw new HttpException(
+        'Subject has related records; remove assignments first',
+        409,
+      );
+    }
+
     await this.prismaService.subject.delete({ where: { id } });
     return { message: `Subject ${id} deleted successfully` };
   }

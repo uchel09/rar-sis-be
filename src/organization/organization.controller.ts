@@ -6,14 +6,20 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { OrganizationService } from './organization.service';
 import { WebResponse } from 'src/model/web.model';
 import {
   CreateOrganizationRequest,
   UpdateOrganizationRequest,
 } from 'src/model/organization.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/organizations')
 export class OrganizationController {
   constructor(private organizationService: OrganizationService) {}

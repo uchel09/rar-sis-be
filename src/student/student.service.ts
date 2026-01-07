@@ -35,6 +35,21 @@ export class StudentService {
       request,
     );
 
+    if (createRequest.classId) {
+      const cls = await this.prismaService.class.findUnique({
+        where: { id: createRequest.classId },
+        select: { id: true, schoolId: true },
+      });
+      if (!cls) {
+        throw new NotFoundException(
+          `Class with id ${createRequest.classId} not found`,
+        );
+      }
+      if (cls.schoolId !== createRequest.schoolId) {
+        throw new HttpException('Class must belong to the same school', 400);
+      }
+    }
+
     const existEmail = await this.prismaService.user.count({
       where: { email: createRequest.email },
     });
@@ -61,7 +76,7 @@ export class StudentService {
           enrollmentNumber: createRequest.enrollmentNumber || undefined,
           dob: createRequest.dob,
           address: createRequest.address,
-          isActive: true,
+          isActive: createRequest.isActive ?? true,
         },
         include: {
           user: true,
@@ -70,40 +85,77 @@ export class StudentService {
         },
       });
 
+      const parentIds = Array.from(new Set(createRequest.parentIds ?? []));
+      if (parentIds.length > 0) {
+        const parents = await tx.parent.findMany({
+          where: { id: { in: parentIds } },
+          select: { id: true },
+        });
+
+        if (parents.length !== parentIds.length) {
+          throw new HttpException('Some parentIds not found', 400);
+        }
+
+        await tx.studentParent.createMany({
+          data: parentIds.map((parentId) => ({
+            studentId: student.id,
+            parentId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      const studentWithRelations =
+        parentIds.length > 0
+          ? await tx.student.findUnique({
+              where: { id: student.id },
+              include: {
+                user: true,
+                class: true,
+                parents: {
+                  include: { parent: { include: { user: true } } },
+                },
+              },
+            })
+          : student;
+
+      if (!studentWithRelations) {
+        throw new HttpException('Student not found after creation', 500);
+      }
+
       return {
-        id: student.id,
-        schoolId: student.schoolId,
-        class: student.class
+        id: studentWithRelations.id,
+        schoolId: studentWithRelations.schoolId,
+        class: studentWithRelations.class
           ? {
-              id: student.class.id,
-              name: student.class.name,
-              grade: student.class.grade,
+              id: studentWithRelations.class.id,
+              name: studentWithRelations.class.name,
+              grade: studentWithRelations.class.grade,
             }
           : undefined,
-        enrollmentNumber: student.enrollmentNumber,
-        dob: student.dob,
-        address: student.address || undefined,
+        enrollmentNumber: studentWithRelations.enrollmentNumber,
+        dob: studentWithRelations.dob,
+        address: studentWithRelations.address || undefined,
         user: {
-          id: user.id,
-          fullName: user.fullName,
-          email: user.email,
-          gender: user.gender,
+          id: studentWithRelations.user.id,
+          fullName: studentWithRelations.user.fullName,
+          email: studentWithRelations.user.email,
+          gender: studentWithRelations.user.gender,
         },
-        parents: student.parents.map((p) => ({
+        parents: studentWithRelations.parents.map((p) => ({
           id: p.parent.id,
           fullName: p.parent.user.fullName,
           email: p.parent.user.email,
         })),
-        isActive: student.isActive,
-        createdAt: student.createdAt,
-        updatedAt: student.updatedAt,
+        isActive: studentWithRelations.isActive,
+        createdAt: studentWithRelations.createdAt,
+        updatedAt: studentWithRelations.updatedAt,
       };
     });
   }
 
   // ✅ READ ALL
   async findAllStudentByClassId(id: string): Promise<StudentResponse[]> {
-    console.log(id)
     const students = await this.prismaService.student.findMany({
       where: { classId:id },
       include: {
@@ -244,6 +296,33 @@ export class StudentService {
       data,
     );
 
+    const effectiveSchoolId = updateRequest.schoolId ?? student.schoolId;
+    if (updateRequest.classId) {
+      const cls = await this.prismaService.class.findUnique({
+        where: { id: updateRequest.classId },
+        select: { id: true, schoolId: true },
+      });
+      if (!cls) {
+        throw new NotFoundException(
+          `Class with id ${updateRequest.classId} not found`,
+        );
+      }
+      if (cls.schoolId !== effectiveSchoolId) {
+        throw new HttpException('Class must belong to the same school', 400);
+      }
+    } else if (updateRequest.schoolId && student.classId) {
+      const cls = await this.prismaService.class.findUnique({
+        where: { id: student.classId },
+        select: { id: true, schoolId: true },
+      });
+      if (cls && cls.schoolId !== updateRequest.schoolId) {
+        throw new HttpException(
+          'Existing class must belong to the updated school',
+          400,
+        );
+      }
+    }
+
     if (updateRequest.email && updateRequest.email !== student.user.email) {
       const existEmail = await this.prismaService.user.count({
         where: { email: updateRequest.email },
@@ -268,7 +347,7 @@ export class StudentService {
         : student.user;
 
       // Update student
-      const updatedStudent = await tx.student.update({
+      await tx.student.update({
         where: { id },
         data: {
           schoolId: updateRequest.schoolId,
@@ -285,33 +364,72 @@ export class StudentService {
         },
       });
 
+      if (updateRequest.parentIds !== undefined) {
+        const parentIds = Array.from(new Set(updateRequest.parentIds ?? []));
+        const parents = await tx.parent.findMany({
+          where: { id: { in: parentIds } },
+          select: { id: true },
+        });
+
+        if (parents.length !== parentIds.length) {
+          throw new HttpException('Some parentIds not found', 400);
+        }
+
+        await tx.studentParent.deleteMany({
+          where: { studentId: id },
+        });
+
+        if (parentIds.length > 0) {
+          await tx.studentParent.createMany({
+            data: parentIds.map((parentId) => ({
+              studentId: id,
+              parentId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      const refreshedStudent = await tx.student.findUnique({
+        where: { id },
+        include: {
+          user: true,
+          class: true,
+          parents: { include: { parent: { include: { user: true } } } },
+        },
+      });
+
+      if (!refreshedStudent) {
+        throw new HttpException('Student not found after update', 500);
+      }
+
       return {
-        id: updatedStudent.id,
-        schoolId: updatedStudent.schoolId,
-        class: updatedStudent.class
+        id: refreshedStudent.id,
+        schoolId: refreshedStudent.schoolId,
+        class: refreshedStudent.class
           ? {
-              id: updatedStudent.class.id,
-              name: updatedStudent.class.name,
-              grade: updatedStudent.class.grade,
+              id: refreshedStudent.class.id,
+              name: refreshedStudent.class.name,
+              grade: refreshedStudent.class.grade,
             }
           : undefined,
-        enrollmentNumber: updatedStudent.enrollmentNumber,
-        dob: updatedStudent.dob,
-        address: updatedStudent.address || undefined,
+        enrollmentNumber: refreshedStudent.enrollmentNumber,
+        dob: refreshedStudent.dob,
+        address: refreshedStudent.address || undefined,
         user: {
           id: updatedUser.id,
           fullName: updatedUser.fullName,
           email: updatedUser.email,
           gender: updatedUser.gender,
         },
-        parents: updatedStudent.parents.map((p) => ({
+        parents: refreshedStudent.parents.map((p) => ({
           id: p.parent.id,
           fullName: p.parent.user.fullName,
           email: p.parent.user.email,
         })),
-        isActive: updatedStudent.isActive,
-        createdAt: updatedStudent.createdAt,
-        updatedAt: updatedStudent.updatedAt,
+        isActive: refreshedStudent.isActive,
+        createdAt: refreshedStudent.createdAt,
+        updatedAt: refreshedStudent.updatedAt,
       };
     });
   }
@@ -325,10 +443,37 @@ export class StudentService {
     if (!student)
       throw new NotFoundException(`Student with id ${id} not found`);
 
+    const [
+      classHistoryCount,
+      attendanceDetailCount,
+      assessmentGradeCount,
+      studentExamCount,
+      studentDraftCount,
+    ] = await Promise.all([
+      this.prismaService.studentClassHistory.count({ where: { studentId: id } }),
+      this.prismaService.attendanceDetail.count({ where: { studentId: id } }),
+      this.prismaService.assessmentGrade.count({ where: { studentId: id } }),
+      this.prismaService.studentExam.count({ where: { studentId: id } }),
+      this.prismaService.studentDraft.count({ where: { studentId: id } }),
+    ]);
+
+    if (
+      classHistoryCount > 0 ||
+      attendanceDetailCount > 0 ||
+      assessmentGradeCount > 0 ||
+      studentExamCount > 0 ||
+      studentDraftCount > 0
+    ) {
+      throw new HttpException(
+        'Student has related records; deactivate instead',
+        409,
+      );
+    }
+
     await this.prismaService.$transaction(async (tx) => {
       await tx.studentParent.deleteMany({
-        where: {studentId: id}
-      })
+        where: { studentId: id },
+      });
       await tx.student.delete({ where: { id } });
       await tx.user.delete({ where: { id: student.userId } });
     });

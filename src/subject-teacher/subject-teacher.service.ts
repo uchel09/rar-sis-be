@@ -34,6 +34,33 @@ export class SubjectTeacherService {
     const createRequest: CreateSubjectTeacherRequest =
       this.validationService.validate(SubjectTeacherValidation.CREATE, request);
 
+    const subject = await this.prismaService.subject.findUnique({
+      where: { id: createRequest.subjectId },
+      select: { id: true, schoolId: true },
+    });
+    if (!subject) {
+      throw new NotFoundException(
+        `Subject with id ${createRequest.subjectId} not found`,
+      );
+    }
+
+    const teacher = await this.prismaService.teacher.findUnique({
+      where: { id: createRequest.teacherId },
+      select: { id: true, schoolId: true },
+    });
+    if (!teacher) {
+      throw new NotFoundException(
+        `Teacher with id ${createRequest.teacherId} not found`,
+      );
+    }
+
+    if (subject.schoolId !== teacher.schoolId) {
+      throw new HttpException(
+        'Subject and teacher must belong to the same school',
+        400,
+      );
+    }
+
     const exist = await this.prismaService.subjectTeacher.count({
       where: {
         subjectId: createRequest.subjectId,
@@ -101,16 +128,47 @@ export class SubjectTeacherService {
       throw new NotFoundException(`SubjectTeacher with id ${id} not found`);
     }
 
-    const updateRequest: UpdateSubjectTeacherRequest = this.validationService.validate(
-      SubjectTeacherValidation.UPDATE,
-      request,
-    );
+    const updateRequest: UpdateSubjectTeacherRequest =
+      this.validationService.validate(
+        SubjectTeacherValidation.UPDATE,
+        request,
+      );
+
+    const effectiveSubjectId = updateRequest.subjectId ?? existing.subjectId;
+    const effectiveTeacherId = updateRequest.teacherId ?? existing.teacherId;
+
+    const subject = await this.prismaService.subject.findUnique({
+      where: { id: effectiveSubjectId },
+      select: { id: true, schoolId: true },
+    });
+    if (!subject) {
+      throw new NotFoundException(
+        `Subject with id ${effectiveSubjectId} not found`,
+      );
+    }
+
+    const teacher = await this.prismaService.teacher.findUnique({
+      where: { id: effectiveTeacherId },
+      select: { id: true, schoolId: true },
+    });
+    if (!teacher) {
+      throw new NotFoundException(
+        `Teacher with id ${effectiveTeacherId} not found`,
+      );
+    }
+
+    if (subject.schoolId !== teacher.schoolId) {
+      throw new HttpException(
+        'Subject and teacher must belong to the same school',
+        400,
+      );
+    }
 
     // ✅ Tambahkan pengecekan duplikat kombinasi
     const duplicate = await this.prismaService.subjectTeacher.findFirst({
       where: {
-        subjectId: updateRequest.subjectId,
-        teacherId: updateRequest.teacherId,
+        subjectId: effectiveSubjectId,
+        teacherId: effectiveTeacherId,
         NOT: { id }, // jangan hitung dirinya sendiri
       },
     });

@@ -441,6 +441,20 @@ export class TeacherService {
       throw new NotFoundException(`Teacher with id ${id} not found`);
     }
 
+    const [subjectTeacherCount, homeroomCount, assessmentCount] =
+      await Promise.all([
+        this.prismaService.subjectTeacher.count({ where: { teacherId: id } }),
+        this.prismaService.class.count({ where: { homeroomTeacherId: id } }),
+        this.prismaService.assessment.count({ where: { teacherId: id } }),
+      ]);
+
+    if (subjectTeacherCount > 0 || homeroomCount > 0 || assessmentCount > 0) {
+      throw new HttpException(
+        'Teacher has related records; deactivate instead',
+        409,
+      );
+    }
+
     // Gunakan transaction untuk menghapus teacher dan user sekaligus
     await this.prismaService.$transaction(async (prisma) => {
       await prisma.teacher.delete({ where: { id } });

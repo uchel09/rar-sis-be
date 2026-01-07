@@ -10,7 +10,7 @@ export interface CreateStudentRequest {
   classId?: string;
   enrollmentNumber?: string;
   dob: Date;
-  isActive: boolean;
+  isActive?: boolean;
   address?: string;
   gender: Gender;
   parentIds?: string[]; // jika ingin langsung assign parent
@@ -26,7 +26,7 @@ export interface UpdateStudentRequest {
   dob?: Date;
   isActive?: boolean;
   address?: string;
-  gender: Gender;
+  gender?: Gender;
   parentIds?: string[]; // update relasi parent
 }
 
@@ -56,4 +56,3 @@ export interface StudentResponse {
   createdAt: Date;
   updatedAt: Date;
 }
-

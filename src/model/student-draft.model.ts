@@ -35,7 +35,9 @@ export interface CreateStudentDraftRequest {
 export interface UpdateStudentDraftRequest {
   email?: string;
   fullName?: string;
+  schoolId: string;
   targetClassId?: string;
+  studentId?: string;
   enrollmentNumber?: string;
   dob?: Date;
   address?: string;
@@ -107,4 +109,3 @@ export interface StudentDraftResponse {
   createdAt: Date;
   updatedAt: Date;
 }
-

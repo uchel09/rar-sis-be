@@ -5,7 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from './prisma.service';
 import { VallidationService } from './validation.service';
 import { ErrorFilter } from './error.filter';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './roles.guard';
 
 @Global()
 @Module({
@@ -21,10 +22,13 @@ import { APP_FILTER } from '@nestjs/core';
   providers: [
     PrismaService,
     VallidationService,
-
     {
       provide: APP_FILTER,
       useClass: ErrorFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
   exports: [PrismaService, VallidationService],

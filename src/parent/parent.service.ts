@@ -67,26 +67,68 @@ export class ParentService {
           phone: createRequest.phone,
           address: createRequest.address,
           nik: createRequest.nik,
-          isActive: createRequest.isActive || true,
+          dob: createRequest.dob,
+          isActive: createRequest.isActive ?? true,
         },
       });
 
-      return {
-        id: parent.id,
-        dob: parent.dob,
-        phone: parent.phone || undefined,
-        address: parent.address || undefined,
-        nik: parent.nik,
-        isActive: parent.isActive,
-        user: {
-          gender: user.gender,
-          id: user.id,
-          fullName: user.fullName,
-          email: user.email,
+      if (createRequest.studentIds && createRequest.studentIds.length > 0) {
+        const uniqueStudentIds = Array.from(
+          new Set(createRequest.studentIds),
+        );
+        const students = await tx.student.findMany({
+          where: { id: { in: uniqueStudentIds } },
+          select: { id: true },
+        });
+
+        if (students.length !== uniqueStudentIds.length) {
+          throw new HttpException('Some studentIds not found', 400);
+        }
+
+        await tx.studentParent.createMany({
+          data: uniqueStudentIds.map((studentId) => ({
+            studentId,
+            parentId: parent.id,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      const parentWithRelations = await tx.parent.findUnique({
+        where: { id: parent.id },
+        include: {
+          user: true,
+          students: {
+            include: {
+              student: { include: { user: true } },
+            },
+          },
         },
-        students: [],
-        createdAt: parent.createdAt,
-        updatedAt: parent.updatedAt,
+      });
+
+      if (!parentWithRelations) {
+        throw new HttpException('Parent not found after creation', 500);
+      }
+
+      return {
+        id: parentWithRelations.id,
+        dob: parentWithRelations.dob,
+        phone: parentWithRelations.phone || undefined,
+        address: parentWithRelations.address || undefined,
+        nik: parentWithRelations.nik,
+        isActive: parentWithRelations.isActive,
+        user: {
+          gender: parentWithRelations.user.gender,
+          id: parentWithRelations.user.id,
+          fullName: parentWithRelations.user.fullName,
+          email: parentWithRelations.user.email,
+        },
+        students: parentWithRelations.students.map((s) => ({
+          id: s.student.id,
+          fullName: s.student.user.fullName,
+        })),
+        createdAt: parentWithRelations.createdAt,
+        updatedAt: parentWithRelations.updatedAt,
       };
     });
   }
@@ -144,6 +186,7 @@ export class ParentService {
             phone: p.phone,
             address: p.address,
             nik: p.nik,
+            dob: p.dob,
             isActive: p.isActive ?? true,
           },
         });
@@ -194,7 +237,6 @@ export class ParentService {
           status: DraftStatus.APPROVED,
         },
       });
-      console.log(studentDraftId)
       return {
         message: 'Parent dan Student berhasil dibuat dalam satu transaksi',
         studentId: studentRes.id,
@@ -376,6 +418,8 @@ export class ParentService {
           phone: updateRequest.phone,
           address: updateRequest.address,
           nik: updateRequest.nik,
+          dob: updateRequest.dob,
+          isActive: updateRequest.isActive,
         },
         include: {
           students: {
@@ -385,6 +429,49 @@ export class ParentService {
           },
         },
       });
+
+      if (updateRequest.studentIds !== undefined) {
+        const uniqueStudentIds = Array.from(
+          new Set(updateRequest.studentIds ?? []),
+        );
+        const students = await tx.student.findMany({
+          where: { id: { in: uniqueStudentIds } },
+          select: { id: true },
+        });
+
+        if (students.length !== uniqueStudentIds.length) {
+          throw new HttpException('Some studentIds not found', 400);
+        }
+
+        await tx.studentParent.deleteMany({
+          where: { parentId: id },
+        });
+
+        if (uniqueStudentIds.length > 0) {
+          await tx.studentParent.createMany({
+            data: uniqueStudentIds.map((studentId) => ({
+              studentId,
+              parentId: id,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      const refreshedParent = await tx.parent.findUnique({
+        where: { id },
+        include: {
+          students: {
+            include: {
+              student: { include: { user: true } },
+            },
+          },
+        },
+      });
+
+      if (!refreshedParent) {
+        throw new HttpException('Parent not found after update', 500);
+      }
 
       return {
         id: updatedParent.id,
@@ -399,7 +486,7 @@ export class ParentService {
           email: updatedUser.email,
           gender: updatedUser.gender,
         },
-        students: updatedParent.students.map((s) => ({
+        students: refreshedParent.students.map((s) => ({
           id: s.student.id,
           fullName: s.student.user.fullName,
         })),

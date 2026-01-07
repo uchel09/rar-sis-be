@@ -215,7 +215,7 @@ model Student {
 
 model StudentDraft {
   id               String      @id @default(uuid())
-  email            String
+  email            String      @unique
   fullName         String
   schoolId         String
   academicYearId   String
@@ -328,6 +328,8 @@ model Class {
   studentDrafts         StudentDraft[]
   timetables            Timetable[]
   assessments           Assessment[]
+
+  @@unique([schoolId, name, academicYearId])
 }
 
 model StudentClassHistory {
@@ -389,6 +391,8 @@ model AttendanceDetail {
   // Relasi
   attendance Attendance @relation(fields: [attendanceId], references: [id])
   student    Student    @relation(fields: [studentId], references: [id])
+
+  @@unique([attendanceId, studentId])
 }
 
 model Timetable {
@@ -407,6 +411,8 @@ model Timetable {
   class          Class           @relation(fields: [classId], references: [id])
   attendances    Attendance[]
   subjectTeacher SubjectTeacher? @relation(fields: [subjectTeacherid], references: [id])
+
+  @@unique([classId, dayOfWeek, startTime, endTime])
 }
 
 model SubjectTeacher {

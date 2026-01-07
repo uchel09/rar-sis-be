@@ -18,7 +18,7 @@ export class StudentValidation {
       .min(3, { message: 'Enrollment number must be at least 3 characters' })
       .optional(),
     dob: z.coerce.date(),
-    isActive: z.boolean(),
+    isActive: z.boolean().optional(),
     address: z.string().optional(),
     gender: z.enum(Gender, { message: 'Invalid Gender value' }),
     parentIds: z.array(z.uuid()).optional(),

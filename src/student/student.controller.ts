@@ -6,7 +6,9 @@ import {
   Delete,
   Body,
   Param,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { StudentService } from './student.service';
 import {
   CreateStudentRequest,
@@ -15,7 +17,11 @@ import {
 } from 'src/model/student.model';
 import { UtilService } from 'src/common/util.service';
 import { WebResponse } from 'src/model/web.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/students')
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
@@ -49,6 +55,7 @@ export class StudentController {
 
   // ✅ READ BY ID
   @Get('/class/:id')
+  @Roles(Role.TEACHER, Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
   async findAllStudentByClassId(
     @Param('id') id: string,
   ): Promise<WebResponse<StudentResponse[]>> {

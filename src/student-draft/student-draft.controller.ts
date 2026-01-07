@@ -6,7 +6,10 @@ import {
   Param,
   Post,
   Put,
+  ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { StudentDraftService } from './student-draft.service';
 import {
   CreateStudentDraftRequest,
@@ -15,16 +18,32 @@ import {
 } from 'src/model/student-draft.model';
 import { WebResponse } from 'src/model/web.model';
 import { UtilService } from 'src/common/util.service';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+const isDummyEnabled = () =>
+  process.env.NODE_ENV !== 'production' ||
+  process.env.ALLOW_DUMMY_ENDPOINTS === 'true';
+
+const ensureDummyEnabled = () => {
+  if (!isDummyEnabled()) {
+    throw new ForbiddenException('Dummy endpoint disabled');
+  }
+};
+
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/student-drafts')
 export class StudentDraftController {
   constructor(private readonly studentDraftService: StudentDraftService) {}
   @Post('sider')
   async create50Dummy() {
+    ensureDummyEnabled();
     return this.studentDraftService.create50Dummy();
   }
   @Delete('delete-sider')
   async deleteDummy() {
+    ensureDummyEnabled();
     return this.studentDraftService.deleteSider();
   }
   // ✅ CREATE

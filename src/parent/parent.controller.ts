@@ -8,7 +8,9 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { ParentService } from './parent.service';
 import {
   CreateParentRequest,
@@ -17,7 +19,11 @@ import {
 import { ParentResponse } from 'src/model/parent.model';
 import { WebResponse } from 'src/model/web.model';
 import { CreateStudentRequest } from 'src/model/student.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/parents')
 export class ParentController {
   constructor(private readonly parentService: ParentService) {}
@@ -27,7 +33,6 @@ export class ParentController {
   async create(
     @Body() body: CreateParentRequest,
   ): Promise<WebResponse<ParentResponse>> {
-    console.log(body);
     const result = await this.parentService.create(body);
     return {
       data: result,

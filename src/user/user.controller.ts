@@ -10,14 +10,20 @@ import {
   Post,
   Put,
   Req,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { UserService } from './user.service';
 import { WebResponse } from 'src/model/web.model';
 import {
   RegisterUserRequest,
   RegisterUserResponse,
 } from 'src/model/user.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/users')
 export class UserController {
   constructor(private userService: UserService) {}
@@ -43,6 +49,14 @@ export class UserController {
   }
 
   @Get('/me')
+  @Roles(
+    Role.SUPERADMIN,
+    Role.SCHOOL_ADMIN,
+    Role.TEACHER,
+    Role.STUDENT,
+    Role.PARENT,
+    Role.STAFF,
+  )
   async me(@Req() req): Promise<WebResponse<any>> {
     const userId = req.user.id; // dari middleware
     const result = await this.userService.findMe(userId);

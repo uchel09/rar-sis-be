@@ -6,7 +6,9 @@ import {
   Post,
   Put,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { SubjectService } from './subject.service';
 import { WebResponse } from 'src/model/web.model';
 import {
@@ -14,7 +16,11 @@ import {
   UpdateSubjectRequest,
   SubjectResponse,
 } from 'src/model/subject.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/subjects')
 export class SubjectController {
   constructor(private readonly subjectService: SubjectService) {}

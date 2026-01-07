@@ -153,49 +153,48 @@ export class UserService {
       createdAt: user.createdAt,
     };
 
-    // mapping profile by role
+    let profile:
+      | typeof user.student
+      | typeof user.teacher
+      | typeof user.parent
+      | typeof user.staff
+      | (typeof user.schoolAdmins)[number]
+      | null = null;
+
     switch (user.role) {
       case 'STUDENT':
-        return {
-          ...base,
-          profile: user.student,
-        };
+        profile = user.student;
+        break;
 
       case 'TEACHER':
-        return {
-          ...base,
-          profile: user.teacher,
-        };
+        profile = user.teacher;
+        break;
 
       case 'PARENT':
-        return {
-          ...base,
-          profile: user.parent,
-        };
+        profile = user.parent;
+        break;
 
       case 'STAFF':
-        return {
-          ...base,
-          profile: user.staff,
-        };
+        profile = user.staff;
+        break;
 
       case 'SCHOOL_ADMIN':
-        return {
-          ...base,
-          profile: user.schoolAdmins,
-        };
+        profile = user.schoolAdmins?.[0] ?? null;
+        break;
 
       case 'SUPERADMIN':
-        return {
-          ...base,
-          profile: null,
-        };
+        profile = null;
+        break;
 
       default:
-        return {
-          ...base,
-          profile: null,
-        };
+        profile = null;
+        break;
     }
+
+    return {
+      ...base,
+      profile,
+      profileId: profile ? profile.id : null,
+    };
   }
 }

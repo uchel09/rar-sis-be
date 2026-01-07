@@ -8,7 +8,9 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { SchoolAdminService } from './school-admin.service';
 import {
   CreateSchoolAdminRequest,
@@ -16,7 +18,11 @@ import {
   SchoolAdminResponse,
 } from 'src/model/school-admin.model';
 import { WebResponse } from 'src/model/web.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/school-admins')
 export class SchoolAdminController {
   constructor(private readonly schoolAdminService: SchoolAdminService) {}

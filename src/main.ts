@@ -5,6 +5,10 @@ import { ErrorFilter } from './common/error.filter';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is required');
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

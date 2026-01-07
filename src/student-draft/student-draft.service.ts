@@ -76,6 +76,36 @@ export class StudentDraftService {
     const createRequest: CreateStudentDraftRequest =
       this.validationService.validate(StudentDraftValidation.CREATE, request);
 
+    if (createRequest.targetClassId) {
+      const cls = await this.prismaService.class.findUnique({
+        where: { id: createRequest.targetClassId },
+        select: { id: true, schoolId: true },
+      });
+      if (!cls) {
+        throw new NotFoundException(
+          `Class with id ${createRequest.targetClassId} not found`,
+        );
+      }
+      if (cls.schoolId !== createRequest.schoolId) {
+        throw new HttpException('Class must belong to the same school', 400);
+      }
+    }
+
+    if (createRequest.studentId) {
+      const student = await this.prismaService.student.findUnique({
+        where: { id: createRequest.studentId },
+        select: { id: true, schoolId: true },
+      });
+      if (!student) {
+        throw new NotFoundException(
+          `Student with id ${createRequest.studentId} not found`,
+        );
+      }
+      if (student.schoolId !== createRequest.schoolId) {
+        throw new HttpException('Student must belong to the same school', 400);
+      }
+    }
+
     const exist = await this.prismaService.studentDraft.count({
       where: { email: createRequest.email },
     });
@@ -549,6 +579,36 @@ export class StudentDraftService {
     const updateRequest: UpdateStudentDraftRequest =
       this.validationService.validate(StudentDraftValidation.UPDATE, data);
 
+    if (updateRequest.targetClassId) {
+      const cls = await this.prismaService.class.findUnique({
+        where: { id: updateRequest.targetClassId },
+        select: { id: true, schoolId: true },
+      });
+      if (!cls) {
+        throw new NotFoundException(
+          `Class with id ${updateRequest.targetClassId} not found`,
+        );
+      }
+      if (cls.schoolId !== updateRequest.schoolId) {
+        throw new HttpException('Class must belong to the same school', 400);
+      }
+    }
+
+    if (updateRequest.studentId) {
+      const student = await this.prismaService.student.findUnique({
+        where: { id: updateRequest.studentId },
+        select: { id: true, schoolId: true },
+      });
+      if (!student) {
+        throw new NotFoundException(
+          `Student with id ${updateRequest.studentId} not found`,
+        );
+      }
+      if (student.schoolId !== updateRequest.schoolId) {
+        throw new HttpException('Student must belong to the same school', 400);
+      }
+    }
+
     const draft = await this.prismaService.studentDraft.update({
       where: { id },
       data: updateRequest,
@@ -725,8 +785,7 @@ export class StudentDraftService {
       where: { id },
       data: {
         status: DraftStatus.REJECTED,
-        // kalau punya field "rejectionReason", bisa tambahin disini
-        // rejectionReason: reason,
+        rejectionReason: reason ?? null,
       },
       include: {
         academicYear: {

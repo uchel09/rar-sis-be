@@ -6,7 +6,9 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { SchoolService } from './school.service';
 import { WebResponse } from 'src/model/web.model';
 import {
@@ -14,7 +16,11 @@ import {
   UpdateSchoolRequest,
   SchoolResponse,
 } from 'src/model/school.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/schools')
 export class SchoolController {
   constructor(private readonly schoolService: SchoolService) {}

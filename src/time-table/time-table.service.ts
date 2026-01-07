@@ -45,6 +45,44 @@ export class TimeTableService {
     const createRequest: CreateTimetableRequest =
       this.validationService.validate(TimetableValidation.CREATE, request);
 
+    const cls = await this.prisma.class.findUnique({
+      where: { id: createRequest.classId },
+      select: { id: true, schoolId: true },
+    });
+    if (!cls) {
+      throw new NotFoundException(
+        `Class with id ${createRequest.classId} not found`,
+      );
+    }
+    if (cls.schoolId !== createRequest.schoolId) {
+      throw new HttpException('Class must belong to the same school', 400);
+    }
+
+    if (createRequest.subjectTeacherid) {
+      const subjectTeacher = await this.prisma.subjectTeacher.findUnique({
+        where: { id: createRequest.subjectTeacherid },
+        select: {
+          id: true,
+          subject: { select: { schoolId: true } },
+          teacher: { select: { schoolId: true } },
+        },
+      });
+      if (!subjectTeacher) {
+        throw new NotFoundException(
+          `SubjectTeacher with id ${createRequest.subjectTeacherid} not found`,
+        );
+      }
+      if (
+        subjectTeacher.subject.schoolId !== createRequest.schoolId ||
+        subjectTeacher.teacher.schoolId !== createRequest.schoolId
+      ) {
+        throw new HttpException(
+          'SubjectTeacher must belong to the same school',
+          400,
+        );
+      }
+    }
+
     const startTime = this.buildTime(createRequest.startTime);
     const endTime = this.buildTime(createRequest.endTime);
 
@@ -69,8 +107,6 @@ export class TimeTableService {
       );
     }
 
-    createRequest.isActive = true;
-
     const tt = await this.prisma.timetable.create({
       data: {
         schoolId: createRequest.schoolId,
@@ -79,7 +115,7 @@ export class TimeTableService {
         dayOfWeek: createRequest.dayOfWeek,
         startTime,
         endTime,
-        isActive: createRequest.isActive,
+        isActive: createRequest.isActive ?? true,
       },
       select: {
         id: true,
@@ -154,7 +190,6 @@ export class TimeTableService {
       where: { schoolId },
       select: { id: true },
     });
-    console.log(classes);
 
     if (!classes.length) {
       throw new HttpException('Tidak ada kelas ditemukan', 404);
@@ -188,29 +223,72 @@ export class TimeTableService {
       { start: '10:00', end: '11:30' },
     ];
 
+    const existingTimetables = await this.prisma.timetable.findMany({
+      where: {
+        schoolId,
+        classId: { in: classes.map((cls) => cls.id) },
+      },
+      select: {
+        classId: true,
+        dayOfWeek: true,
+        startTime: true,
+        endTime: true,
+      },
+    });
+
+    const existingKeys = new Set(
+      existingTimetables.map(
+        (tt) =>
+          `${tt.classId}|${tt.dayOfWeek}|${tt.startTime.toISOString()}|${tt.endTime.toISOString()}`,
+      ),
+    );
+
+    const toCreate: {
+      schoolId: string;
+      classId: string;
+      dayOfWeek: DayOfWeek;
+      subjectTeacherid: string | null;
+      startTime: Date;
+      endTime: Date;
+      isActive: boolean;
+    }[] = [];
+
     for (const cls of classes) {
       for (const day of days) {
         const sessions = day === 'FRIDAY' ? fridaySessions : normalSessions;
 
         for (const s of sessions) {
-          await this.prisma.timetable.create({
-            data: {
-              schoolId,
-              classId: cls.id,
-              dayOfWeek: day,
-              subjectTeacherid: null,
-              startTime: new Date(`1970-01-01T${s.start}:00Z`),
-              endTime: new Date(`1970-01-01T${s.end}:00Z`),
-              isActive: true,
-            },
+          const startTime = new Date(`1970-01-01T${s.start}:00Z`);
+          const endTime = new Date(`1970-01-01T${s.end}:00Z`);
+          const key = `${cls.id}|${day}|${startTime.toISOString()}|${endTime.toISOString()}`;
+
+          if (existingKeys.has(key)) {
+            continue;
+          }
+
+          existingKeys.add(key);
+          toCreate.push({
+            schoolId,
+            classId: cls.id,
+            dayOfWeek: day,
+            subjectTeacherid: null,
+            startTime,
+            endTime,
+            isActive: true,
           });
         }
       }
     }
 
-    this.logger.info(
-      `✅ Timetable generated successfully for ${classes.length} classes (Mon–Sat)`,
-    );
+    if (toCreate.length > 0) {
+      const created = await this.prisma.timetable.createMany({
+        data: toCreate,
+      });
+
+      this.logger.info(
+        `Timetable generation completed: created ${created.count} entries`,
+      );
+    }
   }
   async findAllByClassId(
     schoolId: string,
@@ -305,7 +383,6 @@ export class TimeTableService {
     this.logger.info(
       `Find all timetables for schoolId=${schoolId}, teacherId=${teacherId}`,
     );
-    console.log(schoolId);
     const timetables = await this.prisma.timetable.findMany({
       where: { schoolId, subjectTeacher: { teacherId } },
       select: {
@@ -525,6 +602,46 @@ export class TimeTableService {
     const updateRequest: UpdateTimetableRequest =
       this.validationService.validate(TimetableValidation.UPDATE, data);
 
+    if (updateRequest.classId) {
+      const cls = await this.prisma.class.findUnique({
+        where: { id: updateRequest.classId },
+        select: { id: true, schoolId: true },
+      });
+      if (!cls) {
+        throw new NotFoundException(
+          `Class with id ${updateRequest.classId} not found`,
+        );
+      }
+      if (cls.schoolId !== exist.schoolId) {
+        throw new HttpException('Class must belong to the same school', 400);
+      }
+    }
+
+    if (updateRequest.subjectTeacherid) {
+      const subjectTeacher = await this.prisma.subjectTeacher.findUnique({
+        where: { id: updateRequest.subjectTeacherid },
+        select: {
+          id: true,
+          subject: { select: { schoolId: true } },
+          teacher: { select: { schoolId: true } },
+        },
+      });
+      if (!subjectTeacher) {
+        throw new NotFoundException(
+          `SubjectTeacher with id ${updateRequest.subjectTeacherid} not found`,
+        );
+      }
+      if (
+        subjectTeacher.subject.schoolId !== exist.schoolId ||
+        subjectTeacher.teacher.schoolId !== exist.schoolId
+      ) {
+        throw new HttpException(
+          'SubjectTeacher must belong to the same school',
+          400,
+        );
+      }
+    }
+
     // 🧩 Cek konflik waktu saat update (jika waktu dan hari berubah)
     if (
       updateRequest.dayOfWeek ||
@@ -663,9 +780,11 @@ export class TimeTableService {
       where: { id: insertSubjectTeacherRequest.subjectTeacherid },
       select: {
         id: true,
+        subject: { select: { schoolId: true } },
         teacher: {
           select: {
             id: true,
+            schoolId: true,
             user: { select: { fullName: true } }, // utk pesan error (opsional)
           },
         },
@@ -675,6 +794,16 @@ export class TimeTableService {
     if (!subjectTeacher) {
       throw new NotFoundException(
         `SubjectTeacher dengan id ${insertSubjectTeacherRequest.subjectTeacherid} tidak ditemukan`,
+      );
+    }
+
+    if (
+      subjectTeacher.teacher.schoolId !== exist.schoolId ||
+      subjectTeacher.subject.schoolId !== exist.schoolId
+    ) {
+      throw new HttpException(
+        'SubjectTeacher must belong to the same school',
+        400,
       );
     }
 

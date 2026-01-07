@@ -6,9 +6,10 @@ export interface CreateParentRequest {
   fullName: string;
   phone: string;
   address?: string;
+  dob?: Date;
   nik: string;
   gender: Gender;
-  isActive: boolean;
+  isActive?: boolean;
   studentIds?: string[]; // Optional list of student IDs to link
 }
 
@@ -18,9 +19,10 @@ export interface UpdateParentRequest {
   fullName?: string;
   phone?: string;
   address?: string;
+  dob?: Date;
   nik?: string;
-  gender: Gender;
-  isActive: boolean;
+  gender?: Gender;
+  isActive?: boolean;
   studentIds?: string[]; // Update linked students
 }
 

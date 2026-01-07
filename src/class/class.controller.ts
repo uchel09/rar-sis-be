@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { ClassService } from './class.service';
 import {
@@ -17,8 +18,12 @@ import {
 } from 'src/model/class.model';
 import { WebResponse } from 'src/model/web.model';
 import { UtilService } from 'src/common/util.service';
-import { Grade } from '@prisma/client';
+import { Grade, Role } from '@prisma/client';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/classes')
 export class ClassController {
   constructor(private readonly classService: ClassService) {}

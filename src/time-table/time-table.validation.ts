@@ -77,7 +77,7 @@ export class TimetableValidation {
     .object({
       subjectTeacherid: z
         .uuid({ message: 'subjectTeacherId harus UUID' }),
-      isActive: z.boolean()
+      isActive: z.boolean().optional(),
     })
    
     

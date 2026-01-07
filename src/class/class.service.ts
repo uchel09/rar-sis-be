@@ -49,6 +49,24 @@ export class ClassService {
       );
     }
 
+    if (createRequest.homeroomTeacherId) {
+      const teacher = await this.prismaService.teacher.findUnique({
+        where: { id: createRequest.homeroomTeacherId },
+        select: { id: true, schoolId: true },
+      });
+      if (!teacher) {
+        throw new NotFoundException(
+          `Teacher with id ${createRequest.homeroomTeacherId} not found`,
+        );
+      }
+      if (teacher.schoolId !== createRequest.schoolId) {
+        throw new HttpException(
+          'Homeroom teacher must belong to the same school',
+          400,
+        );
+      }
+    }
+
     // create class
     const cls = await this.prismaService.class.create({
       data: {
@@ -251,6 +269,28 @@ export class ClassService {
       ClassValidation.UPDATE,
       data,
     );
+
+    const effectiveSchoolId = updateRequest.schoolId ?? exist.schoolId;
+    const effectiveHomeroomTeacherId =
+      updateRequest.homeroomTeacherId ?? exist.homeroomTeacherId;
+
+    if (effectiveHomeroomTeacherId) {
+      const teacher = await this.prismaService.teacher.findUnique({
+        where: { id: effectiveHomeroomTeacherId },
+        select: { id: true, schoolId: true },
+      });
+      if (!teacher) {
+        throw new NotFoundException(
+          `Teacher with id ${effectiveHomeroomTeacherId} not found`,
+        );
+      }
+      if (teacher.schoolId !== effectiveSchoolId) {
+        throw new HttpException(
+          'Homeroom teacher must belong to the same school',
+          400,
+        );
+      }
+    }
 
     const cls = await this.prismaService.class.update({
       where: { id },

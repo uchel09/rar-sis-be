@@ -8,7 +8,10 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { TeacherService } from './teacher.service';
 import {
   CreateTeacherRequest,
@@ -16,7 +19,22 @@ import {
   TeacherResponse,
 } from 'src/model/teacher.model';
 import { WebResponse } from 'src/model/web.model';
+import { Roles } from 'src/common/roles.decorator';
+import { RolesGuard } from 'src/common/roles.guard';
+import { Roles } from 'src/common/roles.decorator';
 
+const isDummyEnabled = () =>
+  process.env.NODE_ENV !== 'production' ||
+  process.env.ALLOW_DUMMY_ENDPOINTS === 'true';
+
+const ensureDummyEnabled = () => {
+  if (!isDummyEnabled()) {
+    throw new ForbiddenException('Dummy endpoint disabled');
+  }
+};
+
+@UseGuards(RolesGuard)
+@Roles(Role.SCHOOL_ADMIN, Role.STAFF, Role.SUPERADMIN)
 @Controller('/api/teachers')
 export class TeacherController {
   constructor(private readonly teacherService: TeacherService) {}
@@ -33,6 +51,7 @@ export class TeacherController {
   }
   @Post('/dummy')
   async create20DummyTeacher(): Promise<WebResponse<any>> {
+    ensureDummyEnabled();
     const result = await this.teacherService.create20DummyTeacher();
     return {
       data: result,
@@ -41,6 +60,7 @@ export class TeacherController {
   @Delete('/dummy')
   @HttpCode(HttpStatus.OK)
   async deleteDummyTeacher() {
+    ensureDummyEnabled();
     return this.teacherService.delete20DummyTeacher();
   }
 

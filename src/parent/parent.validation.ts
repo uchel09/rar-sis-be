@@ -11,7 +11,7 @@ export class ParentValidation {
     dob: z.coerce.date().optional(),
     nik: z.string(),
     gender: z.enum(Gender, { message: 'Invalid Gender value' }),
-    isActive: z.boolean(),
+    isActive: z.boolean().optional(),
     studentIds: z.array(z.uuid()).optional(),
   });
 
@@ -24,7 +24,7 @@ export class ParentValidation {
     dob: z.coerce.date().optional(),
     nik: z.string().optional(),
     gender: z.enum(Gender, { message: 'Invalid Gender value' }).optional(),
-    isActive: z.boolean(),
+    isActive: z.boolean().optional(),
     studentIds: z.array(z.uuid()).optional(),
   });
 }
