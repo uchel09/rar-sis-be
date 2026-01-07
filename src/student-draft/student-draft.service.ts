@@ -578,6 +578,7 @@ export class StudentDraftService {
 
     const updateRequest: UpdateStudentDraftRequest =
       this.validationService.validate(StudentDraftValidation.UPDATE, data);
+    const effectiveSchoolId = updateRequest.schoolId ?? exist.schoolId;
 
     if (updateRequest.targetClassId) {
       const cls = await this.prismaService.class.findUnique({
@@ -589,7 +590,7 @@ export class StudentDraftService {
           `Class with id ${updateRequest.targetClassId} not found`,
         );
       }
-      if (cls.schoolId !== updateRequest.schoolId) {
+      if (cls.schoolId !== effectiveSchoolId) {
         throw new HttpException('Class must belong to the same school', 400);
       }
     }
@@ -604,7 +605,7 @@ export class StudentDraftService {
           `Student with id ${updateRequest.studentId} not found`,
         );
       }
-      if (student.schoolId !== updateRequest.schoolId) {
+      if (student.schoolId !== effectiveSchoolId) {
         throw new HttpException('Student must belong to the same school', 400);
       }
     }

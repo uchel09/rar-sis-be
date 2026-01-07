@@ -35,7 +35,7 @@ export interface CreateStudentDraftRequest {
 export interface UpdateStudentDraftRequest {
   email?: string;
   fullName?: string;
-  schoolId: string;
+  schoolId?: string;
   targetClassId?: string;
   studentId?: string;
   enrollmentNumber?: string;

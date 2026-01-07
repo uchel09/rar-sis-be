@@ -17,7 +17,10 @@ export interface AuthRequest extends Request {
 export class AuthMiddleware implements NestMiddleware {
   use(req: AuthRequest, res: Response, next: NextFunction) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-   
+    if (req.method === 'OPTIONS') {
+      return next();
+    }
+
     const token = req.cookies?.access_token;
 
     if (!token) {

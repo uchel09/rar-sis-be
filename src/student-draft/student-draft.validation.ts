@@ -48,7 +48,7 @@ export class StudentDraftValidation {
     fullName: z.string().min(3).optional(),
     targetClassId: z.uuid().optional(),
     studentId: z.uuid().optional(),
-    schoolId: z.uuid({ message: 'schoolId must be a valid UUID' }),
+    schoolId: z.uuid({ message: 'schoolId must be a valid UUID' }).optional(),
     enrollmentNumber: z.string().optional(),
     academicYearId: z.uuid().optional(),
     dob: z.coerce.date().optional(),
